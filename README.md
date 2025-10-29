@@ -36,5 +36,5 @@ Sistema de delivery desenvolvido com Spring Boot e Java 21.
 [Marco Jesus] - [Gestão de TI - 5º Semestre]  
 Desenvolvido com JDK 21 e Spring Boot 3.5.7
 
-[Seu Nome] - [Sua Turma]  
-Desenvolvido com JDK 21 e Spring Boot 3.2.x
+
+
