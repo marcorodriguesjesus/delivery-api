@@ -1,0 +1,266 @@
+{
+  "info": {
+    "_postman_id": "c9a0f021-3b7c-4a8a-9a0f-d4212a43a0e1",
+    "name": "DeliveryAPI - Roteiro 4",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Cenários de Teste Obrigatórios",
+      "item": [
+        {
+          "name": "Cenário 1: POST Cadastrar Cliente",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n    \"nome\": \"João Silva\",\r\n    \"email\": \"joao.silva@email.com\",\r\n    \"telefone\": \"11999999999\",\r\n    \"endereco\": \"Rua A, 123\"\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "http://localhost:8080/api/clientes",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "8080",
+              "path": [
+                "api",
+                "clientes"
+              ]
+            },
+            "description": "Cenário 1: Cadastro de Cliente (Status 201)"
+          },
+          "response": []
+        },
+        {
+          "name": "Cenário 2: POST Criar Pedido",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n    \"clienteId\": 1,\r\n    \"restauranteId\": 2,\r\n    \"itens\": [\r\n        {\"produtoId\": 3, \"quantidade\": 2},\r\n        {\"produtoId\": 5, \"quantidade\": 1}\r\n    ],\r\n    \"observacoes\": \"Enviar maionese, por favor.\"\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "http://localhost:8080/api/pedidos",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "8080",
+              "path": [
+                "api",
+                "pedidos"
+              ]
+            },
+            "description": "Cenário 2: Criação de Pedido Completo (Usando dados do DataLoader)"
+          },
+          "response": []
+        },
+        {
+          "name": "Cenário 3: GET Produtos por Restaurante",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:8080/api/restaurantes/1/produtos",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "8080",
+              "path": [
+                "api",
+                "restaurantes",
+                "1",
+                "produtos"
+              ]
+            },
+            "description": "Cenário 3: Busca de Produtos por Restaurante (ID 1 - Sabor da India)"
+          },
+          "response": []
+        },
+        {
+          "name": "Cenário 4: PATCH Atualizar Status Pedido",
+          "request": {
+            "method": "PATCH",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:8080/api/pedidos/2/status?status=CONFIRMADO",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "8080",
+              "path": [
+                "api",
+                "pedidos",
+                "2",
+                "status"
+              ],
+              "query": [
+                {
+                  "key": "status",
+                  "value": "CONFIRMADO"
+                }
+              ]
+            },
+            "description": "Cenário 4: Atualização de Status do Pedido (Pedido ID 2)"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Outros Endpoints (CRUDs)",
+      "item": [
+        {
+          "name": "GET Listar Clientes Ativos",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:8080/api/clientes",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "8080",
+              "path": [
+                "api",
+                "clientes"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "GET Buscar Cliente por ID",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:8080/api/clientes/1",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "8080",
+              "path": [
+                "api",
+                "clientes",
+                "1"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "GET Listar Restaurantes Disponíveis",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:8080/api/restaurantes",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "8080",
+              "path": [
+                "api",
+                "restaurantes"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "GET Calcular Taxa Entrega",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:8080/api/restaurantes/1/taxa-entrega/30110000",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "8080",
+              "path": [
+                "api",
+                "restaurantes",
+                "1",
+                "taxa-entrega",
+                "30110000"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "POST Calcular Total (Sem Salvar)",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n    \"clienteId\": 1,\r\n    \"restauranteId\": 1,\r\n    \"itens\": [\r\n        {\"produtoId\": 1, \"quantidade\": 2},\r\n        {\"produtoId\": 2, \"quantidade\": 1}\r\n    ]\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "http://localhost:8080/api/pedidos/calcular",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "8080",
+              "path": [
+                "api",
+                "pedidos",
+                "calcular"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "DELETE Cancelar Pedido",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:8080/api/pedidos/1",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "8080",
+              "path": [
+                "api",
+                "pedidos",
+                "1"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    }
+  ]
+}

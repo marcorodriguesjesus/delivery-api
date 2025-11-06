@@ -1,129 +1,90 @@
 package com.deliverytech.delivery_api.controller;
 
 import java.util.List;
-import java.util.Optional;
 
 import com.deliverytech.delivery_api.dto.ClienteResponseDTO;
-import com.deliverytech.delivery_api.dto.ClienteResquetDTO;
+import com.deliverytech.delivery_api.dto.ClienteResquestDTO;
+import com.deliverytech.delivery_api.dto.PedidoResumoDTO;
+import com.deliverytech.delivery_api.services.ClienteService;
+import com.deliverytech.delivery_api.services.PedidoService;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.validation.annotation.Validated;
-import org.springframework.web.bind.annotation.CrossOrigin;
-import org.springframework.web.bind.annotation.DeleteMapping;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.PutMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
-
-import com.deliverytech.delivery_api.entity.Cliente;
-import com.deliverytech.delivery_api.services.ClienteService;
+import org.springframework.web.bind.annotation.*;
 
 @RestController
-@RequestMapping("/clientes")
+@RequestMapping("/api/clientes") // ATIVIDADE 2: Caminho base atualizado
 @CrossOrigin(origins = "*")
 public class ClienteController {
-    
-   @Autowired
+
+    @Autowired
     private ClienteService clienteService;
 
+    @Autowired
+    private PedidoService pedidoService; // Necessário para o endpoint 2.4
+
     /**
-     * Cadastrar novo cliente
+     * 2.1: POST /api/clientes - Cadastrar cliente
      */
     @PostMapping
-    public ResponseEntity<?> cadastrar(@Valid @RequestBody ClienteResquetDTO cliente) {
-        try {
-            ClienteResponseDTO clienteSalvo = clienteService.cadastrar(cliente);
-            return ResponseEntity.status(HttpStatus.CREATED).body(clienteSalvo);
-        } catch (IllegalArgumentException e) {
-            return ResponseEntity.badRequest().body("Erro: " + e.getMessage());
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                .body("Erro interno do servidor");
-        }
+    public ResponseEntity<ClienteResponseDTO> cadastrar(@Valid @RequestBody ClienteResquestDTO clienteDto) {
+        ClienteResponseDTO clienteSalvo = clienteService.cadastrarCliente(clienteDto);
+        return ResponseEntity.status(HttpStatus.CREATED).body(clienteSalvo);
     }
 
     /**
-     * Listar todos os clientes ativos
+     * 2.1: GET /api/clientes - Listar clientes ativos
      */
     @GetMapping
-    public ResponseEntity<List<Cliente>> listar() {
-        List<Cliente> clientes = clienteService.listarAtivos();
+    public ResponseEntity<List<ClienteResponseDTO>> listarAtivos() {
+        List<ClienteResponseDTO> clientes = clienteService.listarClientesAtivos();
         return ResponseEntity.ok(clientes);
     }
 
     /**
-     * Buscar cliente por ID
+     * 2.1: GET /api/clientes/{id} - Buscar por ID
      */
     @GetMapping("/{id}")
-    public ResponseEntity<?> buscarPorId(@PathVariable Long id) {
-        Optional<Cliente> cliente = clienteService.buscarPorId(id);
-
-        if (cliente.isPresent()) {
-            return ResponseEntity.ok(cliente.get());
-        } else {
-            return ResponseEntity.notFound().build();
-        }
+    public ResponseEntity<ClienteResponseDTO> buscarPorId(@PathVariable Long id) {
+        ClienteResponseDTO cliente = clienteService.buscarClientePorId(id);
+        return ResponseEntity.ok(cliente);
     }
 
     /**
-     * Atualizar cliente
-     */
-    @PutMapping("/{id}")
-    public ResponseEntity<?> atualizar(@PathVariable Long id,
-                                      @Validated @RequestBody Cliente cliente) {
-        try {
-            Cliente clienteAtualizado = clienteService.atualizar(id, cliente);
-            return ResponseEntity.ok(clienteAtualizado);
-        } catch (IllegalArgumentException e) {
-            return ResponseEntity.badRequest().body("Erro: " + e.getMessage());
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                .body("Erro interno do servidor");
-        }
-    }
-
-    /**
-     * Inativar cliente (soft delete)
-     */
-    @DeleteMapping("/{id}")
-    public ResponseEntity<?> inativar(@PathVariable Long id) {
-        try {
-            clienteService.inativar(id);
-            return ResponseEntity.ok().body("Cliente inativado com sucesso");
-        } catch (IllegalArgumentException e) {
-            return ResponseEntity.badRequest().body("Erro: " + e.getMessage());
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                .body("Erro interno do servidor");
-        }
-    }
-
-    /**
-     * Buscar clientes por nome
-     */
-    @GetMapping("/buscar")
-    public ResponseEntity<List<Cliente>> buscarPorNome(@RequestParam String nome) {
-        List<Cliente> clientes = clienteService.buscarPorNome(nome);
-        return ResponseEntity.ok(clientes);
-    }
-
-    /**
-     * Buscar cliente por email
+     * 2.1: GET /api/clientes/email/{email} - Buscar por email
      */
     @GetMapping("/email/{email}")
-    public ResponseEntity<?> buscarPorEmail(@PathVariable String email) {
-        Optional<Cliente> cliente = clienteService.buscarPorEmail(email);
+    public ResponseEntity<ClienteResponseDTO> buscarPorEmail(@PathVariable String email) {
+        ClienteResponseDTO cliente = clienteService.buscarClientePorEmail(email);
+        return ResponseEntity.ok(cliente);
+    }
 
-        if (cliente.isPresent()) {
-            return ResponseEntity.ok(cliente.get());
-        } else {
-            return ResponseEntity.notFound().build();
-        }
+    /**
+     * 2.1: PUT /api/clientes/{id} - Atualizar cliente
+     */
+    @PutMapping("/{id}")
+    public ResponseEntity<ClienteResponseDTO> atualizar(@PathVariable Long id, @Valid @RequestBody ClienteResquestDTO clienteDto) {
+        ClienteResponseDTO clienteAtualizado = clienteService.atualizarCliente(id, clienteDto);
+        return ResponseEntity.ok(clienteAtualizado);
+    }
+
+    /**
+     * 2.1: PATCH /api/clientes/{id}/status - Ativar/desativar
+     */
+    @PatchMapping("/{id}/status")
+    public ResponseEntity<ClienteResponseDTO> ativarDesativar(@PathVariable Long id) {
+        ClienteResponseDTO cliente = clienteService.ativarDesativarCliente(id);
+        return ResponseEntity.ok(cliente);
+    }
+
+    /**
+     * 2.4: GET /api/clientes/{clienteId}/pedidos - Histórico do cliente
+     * (Este endpoint pertence à Atividade 2.4, mas se encaixa melhor aqui)
+     */
+    @GetMapping("/{clienteId}/pedidos")
+    public ResponseEntity<List<PedidoResumoDTO>> buscarPedidosPorCliente(@PathVariable Long clienteId) {
+        List<PedidoResumoDTO> pedidos = pedidoService.buscarPedidosPorCliente(clienteId);
+        return ResponseEntity.ok(pedidos);
     }
 }

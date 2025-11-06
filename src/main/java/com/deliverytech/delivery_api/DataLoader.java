@@ -1,4 +1,4 @@
-package com.deliverytech.delivery_api;
+/*package com.deliverytech.delivery_api;
 
 import com.deliverytech.delivery_api.entity.Cliente;
 import com.deliverytech.delivery_api.entity.Pedido;
@@ -112,4 +112,4 @@ public class DataLoader implements CommandLineRunner {
         System.out.println("FIM DA VALIDAÇÃO DAS CONSULTAS");
         System.out.println("==================================================");
     }
-}
+}*/

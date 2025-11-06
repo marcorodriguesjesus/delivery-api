@@ -2,11 +2,13 @@ package com.deliverytech.delivery_api.services;
 
 import java.time.LocalDateTime;
 import java.util.List;
-import java.util.Optional;
+import java.util.stream.Collectors;
 
 import com.deliverytech.delivery_api.dto.ClienteResponseDTO;
-import com.deliverytech.delivery_api.dto.ClienteResquetDTO;
+import com.deliverytech.delivery_api.dto.ClienteResquestDTO;
 import com.deliverytech.delivery_api.exceptions.BusinessException;
+import com.deliverytech.delivery_api.exceptions.EntityNotFoundException;
+import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -18,111 +20,93 @@ import com.deliverytech.delivery_api.repository.ClienteRepository;
 @Transactional
 public class ClienteService {
 
-     @Autowired
+    @Autowired
     private ClienteRepository clienteRepository;
 
+    @Autowired
+    private ModelMapper modelMapper;
+
     /**
-     * Cadastrar novo cliente
+     * 1.1: Cadastrar Cliente (Validar email único)
      */
-    public ClienteResponseDTO cadastrar(ClienteResquetDTO dto) {
-        // Validar email único
+    public ClienteResponseDTO cadastrarCliente(ClienteResquestDTO dto) {
         if (clienteRepository.existsByEmail(dto.getEmail())) {
             throw new BusinessException("Email já cadastrado: " + dto.getEmail());
         }
 
-        Cliente cliente = new Cliente();
-        cliente.setNome(dto.getNome());
-        cliente.setEmail(dto.getEmail());
-        cliente.setTelefone(dto.getTelefone());
-        cliente.setEndereco(dto.getEndereco());
-        // Definir como ativo por padrão
+        Cliente cliente = modelMapper.map(dto, Cliente.class);
         cliente.setAtivo(true);
         cliente.setDataCadastro(LocalDateTime.now());
 
+        Cliente clienteSalvo = clienteRepository.save(cliente);
 
-        return new ClienteResponseDTO(clienteRepository.save(cliente));
+        return modelMapper.map(clienteSalvo, ClienteResponseDTO.class);
     }
 
     /**
-     * Buscar cliente por ID
+     * 1.1: Buscar Cliente por ID (Tratamento de não encontrado)
      */
     @Transactional(readOnly = true)
-    public Optional<Cliente> buscarPorId(Long id) {
-        return clienteRepository.findById(id);
+    public ClienteResponseDTO buscarClientePorId(Long id) {
+        Cliente cliente = clienteRepository.findById(id)
+                .orElseThrow(() -> new EntityNotFoundException("Cliente não encontrado com ID: " + id));
+
+        return modelMapper.map(cliente, ClienteResponseDTO.class);
     }
 
     /**
-     * Buscar cliente por email
+     * 1.1: Buscar Cliente por Email
      */
     @Transactional(readOnly = true)
-    public Optional<Cliente> buscarPorEmail(String email) {
-        return clienteRepository.findByEmail(email);
+    public ClienteResponseDTO buscarClientePorEmail(String email) {
+        Cliente cliente = clienteRepository.findByEmail(email)
+                .orElseThrow(() -> new EntityNotFoundException("Cliente não encontrado com Email: " + email));
+
+        return modelMapper.map(cliente, ClienteResponseDTO.class);
     }
 
     /**
-     * Listar todos os clientes ativos
+     * 1.1: Listar Clientes Ativos
      */
     @Transactional(readOnly = true)
-    public List<Cliente> listarAtivos() {
-        return clienteRepository.findByAtivoTrue();
+    public List<ClienteResponseDTO> listarClientesAtivos() {
+        List<Cliente> clientesAtivos = clienteRepository.findByAtivoTrue();
+
+        return clientesAtivos.stream()
+                .map(cliente -> modelMapper.map(cliente, ClienteResponseDTO.class))
+                .collect(Collectors.toList());
     }
 
     /**
-     * Atualizar dados do cliente
+     * 1.1: Atualizar Cliente
      */
-    public Cliente atualizar(Long id, Cliente clienteAtualizado) {
-        Cliente cliente = buscarPorId(id)
-            .orElseThrow(() -> new IllegalArgumentException("Cliente não encontrado: " + id));
+    public ClienteResponseDTO atualizarCliente(Long id, ClienteResquestDTO dto) {
+        Cliente cliente = clienteRepository.findById(id)
+                .orElseThrow(() -> new EntityNotFoundException("Cliente não encontrado com ID: " + id));
 
-        // Verificar se email não está sendo usado por outro cliente
-        if (!cliente.getEmail().equals(clienteAtualizado.getEmail()) &&
-            clienteRepository.existsByEmail(clienteAtualizado.getEmail())) {
-            throw new IllegalArgumentException("Email já cadastrado: " + clienteAtualizado.getEmail());
+        // Validar email único (se o email mudou)
+        if (!cliente.getEmail().equals(dto.getEmail()) && clienteRepository.existsByEmail(dto.getEmail())) {
+            throw new BusinessException("Email já cadastrado: " + dto.getEmail());
         }
 
-        // Atualizar campos
-        cliente.setNome(clienteAtualizado.getNome());
-        cliente.setEmail(clienteAtualizado.getEmail());
-        cliente.setTelefone(clienteAtualizado.getTelefone());
-        cliente.setEndereco(clienteAtualizado.getEndereco());
+        modelMapper.map(dto, cliente); // Atualiza os campos do cliente existente
 
-        return clienteRepository.save(cliente);
+        Cliente clienteAtualizado = clienteRepository.save(cliente);
+
+        return modelMapper.map(clienteAtualizado, ClienteResponseDTO.class);
     }
 
     /**
-     * Inativar cliente (soft delete)
+     * 1.1: Ativar/Desativar Cliente (Toggle)
      */
-    public void inativar(Long id) {
-        Cliente cliente = buscarPorId(id)
-            .orElseThrow(() -> new IllegalArgumentException("Cliente não encontrado: " + id));
+    public ClienteResponseDTO ativarDesativarCliente(Long id) {
+        Cliente cliente = clienteRepository.findById(id)
+                .orElseThrow(() -> new EntityNotFoundException("Cliente não encontrado com ID: " + id));
 
-        cliente.inativar();
-        clienteRepository.save(cliente);
+        cliente.setAtivo(!cliente.getAtivo()); // Lógica do Toggle
+
+        Cliente clienteSalvo = clienteRepository.save(cliente);
+
+        return modelMapper.map(clienteSalvo, ClienteResponseDTO.class);
     }
-
-    /**
-     * Buscar clientes por nome
-     */
-    @Transactional(readOnly = true)
-    public List<Cliente> buscarPorNome(String nome) {
-        return clienteRepository.findByNomeContainingIgnoreCase(nome);
-    }
-
-    /**
-     * Validações de negócio
-     */
-//    private void validarDadosCliente(ClienteResquetDTO cliente) {
-//        if (cliente.getNome() == null || cliente.getNome().trim().isEmpty()) {
-//            throw new IllegalArgumentException("Nome é obrigatório");
-//        }
-//
-//        if (cliente.getEmail() == null || cliente.getEmail().trim().isEmpty()) {
-//            throw new IllegalArgumentException("Email é obrigatório");
-//        }
-//
-//        if (cliente.getNome().length() < 2) {
-//            throw new IllegalArgumentException("Nome deve ter pelo menos 2 caracteres");
-//        }
-//    }
-    
 }

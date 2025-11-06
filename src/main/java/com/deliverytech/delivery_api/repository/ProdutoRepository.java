@@ -33,5 +33,7 @@ public interface ProdutoRepository extends JpaRepository <Produto, Long> {
             "LIMIT :limite",
             nativeQuery = true)
     List<RelatorioProdutoVendido> findProdutosMaisVendidos(@Param("limite") int limite);
+
+    List<Produto> findByRestauranteIdAndDisponivelTrue(Long restauranteId);
     
 }

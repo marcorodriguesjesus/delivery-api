@@ -2,8 +2,10 @@ package com.deliverytech.delivery_api.dto;
 
 import com.deliverytech.delivery_api.entity.Cliente;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 
 @Data
+@NoArgsConstructor
 public class ClienteResponseDTO {
 
     private Long id;
