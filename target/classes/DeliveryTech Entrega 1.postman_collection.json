@@ -1,0 +1,525 @@
+{
+	"info": {
+		"_postman_id": "49590708-79704587-5fe9-4bc3-b5b8-72dfa022063f",
+		"name": "DeliveryTech Entrega 1",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "33884958"
+	},
+	"item": [
+		{
+			"name": "Cliente",
+			"item": [
+				{
+					"name": "http://localhost:8080/clientes",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n    \"nome\": \"João da Silva\",\r\n    \"email\": \"joao.silva@example.com\",\r\n    \"telefone\": \"(31) 99999-9999\",\r\n    \"endereco\": \"Rua das Flores, 123 - Contagem, MG\",\r\n    \"dataCadastro\": \"2025-06-26T21:19:00\"\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "http://localhost:8080/clientes",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8080",
+							"path": [
+								"clientes"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "http://localhost:8080/clientes/1",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n    \"id\": 1,\r\n    \"nome\": \"Cliente Atualizado\",\r\n    \"email\": \"atualizado@email.com\",\r\n    \"telefone\": \"(11) 99999-1111\",\r\n    \"endereco\": \"Rua Atualizada, 456\",\r\n    \"ativo\": true\r\n  }",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "http://localhost:8080/clientes/1",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8080",
+							"path": [
+								"clientes",
+								"1"
+							]
+						},
+						"description": "Generated from cURL: curl --request PUT \\\r\n  --url http://localhost:8080/clientes/1 \\\r\n  --header 'Content-Type: application/json' \\\r\n  --data '{\r\n    \"nome\": \"Cliente Atualizado\",\r\n    \"email\": \"atualizado@email.com\",\r\n    \"telefone\": \"(11) 99999-1111\",\r\n    \"endereco\": \"Rua Atualizada, 456\",\r\n    \"ativo\": true\r\n  }'\r\n"
+					},
+					"response": []
+				},
+				{
+					"name": "http://localhost:8080/clientes/1",
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "http://localhost:8080/clientes/2",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8080",
+							"path": [
+								"clientes",
+								"2"
+							]
+						},
+						"description": "Generated from cURL: curl --request DELETE \\\r\n  --url http://localhost:8080/clientes/1"
+					},
+					"response": []
+				},
+				{
+					"name": "http://localhost:8080/clientes",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://localhost:8080/clientes",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8080",
+							"path": [
+								"clientes"
+							]
+						},
+						"description": "Generated from cURL: curl --request GET \\\r\n  --url http://localhost:8080/clientes"
+					},
+					"response": []
+				},
+				{
+					"name": "http://localhost:8080/clientes/1",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://localhost:8080/clientes/1",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8080",
+							"path": [
+								"clientes",
+								"1"
+							]
+						},
+						"description": "Generated from cURL: curl --request GET \\\r\n  --url http://localhost:8080/clientes/1"
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Produto",
+			"item": [
+				{
+					"name": "http://localhost:8080/produtos",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"nome\": \"Produto\",\n    \"descricao\": \"Descrição do produto\",\n    \"preco\": 19.99,\n    \"categoria\": \"Bebidas\",\n    \"disponivel\": true,\n    \"restauranteId\": 1\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "http://localhost:8080/produtos",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8080",
+							"path": [
+								"produtos"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "http://localhost:8080/produtos/1",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"nome\": \"Produto Atualizado\",\n    \"descricao\": \"Nova descrição\",\n    \"preco\": 29.99,\n    \"categoria\": \"Lanches\",\n    \"disponivel\": false,\n    \"restaurante\": { \"id\": 1 }\n  }",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "http://localhost:8080/produtos/10",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8080",
+							"path": [
+								"produtos",
+								"10"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "http://localhost:8080/produtos/1",
+					"request": {
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "http://localhost:8080/produtos/10",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8080",
+							"path": [
+								"produtos",
+								"10"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "http://localhost:8080/produtos/restaurante/1",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://localhost:8080/produtos/restaurante/1",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8080",
+							"path": [
+								"produtos",
+								"restaurante",
+								"1"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "http://localhost:8080/produtos",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://localhost:8080/produtos",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8080",
+							"path": [
+								"produtos"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "http://localhost:8080/produtos/1",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://localhost:8080/produtos/10",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8080",
+							"path": [
+								"produtos",
+								"10"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Pedido",
+			"item": [
+				{
+					"name": "http://localhost:8080/pedidos",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n    \"numeroPedido\": \"0002\",\r\n    \"dataPedido\": \"2025-06-26T21:19:00\",\r\n    \"valorTotal\": 10.0,\r\n    \"observacoes\": \"true\",\r\n    \"clienteId\": 1,\r\n    \"restauranteId\": 1,\r\n    \"itens\": \"X-Burger, Batata Frita\"\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "http://localhost:8080/pedidos",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8080",
+							"path": [
+								"pedidos"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "http://localhost:8080/pedidos?clienteId",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://localhost:8080/pedidos/cliente/1",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8080",
+							"path": [
+								"pedidos",
+								"cliente",
+								"1"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "http://localhost:8080/pedidos/1/ENTREGUE",
+					"request": {
+						"method": "PUT",
+						"header": [],
+						"url": {
+							"raw": "http://localhost:8080/pedidos/1/CONFIRMADO",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8080",
+							"path": [
+								"pedidos",
+								"1",
+								"CONFIRMADO"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Restaurante",
+			"item": [
+				{
+					"name": "http://localhost:8080/restaurantes",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"nome\": \"Restaurante Exemplo\",\n    \"categoria\": \"Italiana\",\n    \"endereco\": \"Rua das Flores, 100\",\n    \"telefone\": \"(11) 99999-8888\",\n    \"taxa_entrega\": 5.00,\n    \"avaliacao\": 4.5,\n    \"ativo\": true\n  }",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "http://localhost:8080/restaurantes",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8080",
+							"path": [
+								"restaurantes"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "http://localhost:8080/restaurantes/1",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"nome\": \"Restaurante Atualizado\",\n    \"categoria\": \"Japonesa\",\n    \"endereco\": \"Rua Nova, 200\",\n    \"telefone\": \"(11) 98888-7777\",\n    \"taxa_entrega\": 7.50,\n    \"avaliacao\": 4.8,\n    \"ativo\": true\n  }",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "http://localhost:8080/restaurantes/1",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8080",
+							"path": [
+								"restaurantes",
+								"1"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "http://localhost:8080/restaurantes/1",
+					"request": {
+						"method": "PUT",
+						"header": [],
+						"url": {
+							"raw": "http://localhost:8080/restaurantes/4/inativar",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8080",
+							"path": [
+								"restaurantes",
+								"4",
+								"inativar"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "http://localhost:8080/restaurantes",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://localhost:8080/restaurantes",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8080",
+							"path": [
+								"restaurantes"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "http://localhost:8080/restaurantes/1",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://localhost:8080/restaurantes/3",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8080",
+							"path": [
+								"restaurantes",
+								"3"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "http://localhost:8080/restaurantes/categoria/Italiana",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://localhost:8080/restaurantes/categoria/Italiana",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8080",
+							"path": [
+								"restaurantes",
+								"categoria",
+								"Italiana"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		}
+	]
+}

@@ -1,5 +1,7 @@
 package com.deliverytech.delivery_api.repository;
 
+import com.deliverytech.delivery_api.dto.reports.RelatorioRankingCliente;
+import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
 import com.deliverytech.delivery_api.entity.Cliente;
 
@@ -22,5 +24,13 @@ public interface ClienteRepository extends JpaRepository <Cliente, Long> {
 
     // Buscar clientes por nome (contendo)
     List<Cliente> findByNomeContainingIgnoreCase(String nome);
+
+    @Query(value = "SELECT c.nome as clienteNome, COUNT(p.id) as totalPedidos " +
+            "FROM clientes c " +
+            "JOIN pedidos p ON c.id = p.cliente_id " +
+            "GROUP BY c.nome " +
+            "ORDER BY totalPedidos DESC",
+            nativeQuery = true)
+    List<RelatorioRankingCliente> findRankingClientesPorPedidos();
     
 }
