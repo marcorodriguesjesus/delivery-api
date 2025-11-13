@@ -1,0 +1,452 @@
+{
+  "info": {
+    "_postman_id": "d8a1c92b-0e1a-4f5a-9b2f-7f7f0a8d6b1a",
+    "name": "DeliveryAPI - Roteiro Completo (Atividade 4)",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "1. Clientes (CRUD e Paginação)",
+      "item": [
+        {
+          "name": "POST Cadastrar Cliente (Salva 'clienteId')",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "// Cenário 4.2: Testa Status 201",
+                  "pm.test(\"Status code is 201 Created\", () => { pm.response.to.have.status(201); });",
+                  "",
+                  "// Cenário 4.2: Valida o wrapper ApiResponse",
+                  "pm.test(\"Resposta é 'success: true' e contém 'data'\", () => {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.success).to.be.true;",
+                  "    pm.expect(jsonData).to.have.property('data');",
+                  "    pm.expect(jsonData).to.not.have.property('error');",
+                  "    pm.expect(jsonData.data.nome).to.eql(\"Cliente Teste Postman\");",
+                  "});",
+                  "",
+                  "// Cenário 4.3: Salva o ID em Variáveis de Ambiente",
+                  "var jsonData = pm.response.json();",
+                  "if (jsonData.success && jsonData.data.id) {",
+                  "    pm.environment.set(\"clienteId\", jsonData.data.id);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n    \"nome\": \"Cliente Teste Postman\",\r\n    \"email\": \"postman.teste@email.com\",\r\n    \"telefone\": \"11999999999\",\r\n    \"endereco\": \"Rua Postman, 123\"\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "http://localhost:8080/api/clientes",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "8080",
+              "path": [
+                "api",
+                "clientes"
+              ]
+            },
+            "description": "Cenário 4.2: Criação bem-sucedida (201)\nCenário 4.3: Salva o ID do cliente criado na variável 'clienteId' para ser usado nos próximos testes."
+          },
+          "response": []
+        },
+        {
+          "name": "GET Buscar Cliente por ID (Usa 'clienteId')",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "// Cenário 4.2: Testa Status 200",
+                  "pm.test(\"Status code is 200 OK\", () => { pm.response.to.have.status(200); });",
+                  "",
+                  "// Cenário 4.2: Valida o wrapper ApiResponse",
+                  "pm.test(\"Resposta é 'success: true' e contém 'data'\", () => {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.success).to.be.true;",
+                  "    pm.expect(jsonData).to.have.property('data');",
+                  "    pm.expect(jsonData.data.id).to.eql(parseInt(pm.environment.get(\"clienteId\")));",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:8080/api/clientes/{{clienteId}}",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "8080",
+              "path": [
+                "api",
+                "clientes",
+                "{{clienteId}}"
+              ]
+            },
+            "description": "Cenário 4.2: Busca existente (200)\nCenário 4.3: Usa a variável 'clienteId' salva no passo anterior."
+          },
+          "response": []
+        },
+        {
+          "name": "GET Listar Clientes (Paginação)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "// Cenário 4.2: Testa Status 200",
+                  "pm.test(\"Status code is 200 OK\", () => { pm.response.to.have.status(200); });",
+                  "",
+                  "// Cenário 4.2: Valida Paginação e Metadados",
+                  "pm.test(\"Resposta é paginada e wrapper está correto\", () => {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.success).to.be.true;",
+                  "    pm.expect(jsonData.data).to.have.property('content');",
+                  "    pm.expect(jsonData.data).to.have.property('page');",
+                  "    pm.expect(jsonData.data).to.have.property('size');",
+                  "    pm.expect(jsonData.data).to.have.property('totalElements');",
+                  "    pm.expect(jsonData.data).to.have.property('totalPages');",
+                  "    pm.expect(jsonData.data.page).to.eql(0);",
+                  "    pm.expect(jsonData.data.size).to.eql(5);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:8080/api/clientes?page=0&size=5&sort=nome,asc",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "8080",
+              "path": [
+                "api",
+                "clientes"
+              ],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "0"
+                },
+                {
+                  "key": "size",
+                  "value": "5"
+                },
+                {
+                  "key": "sort",
+                  "value": "nome,asc"
+                }
+              ]
+            },
+            "description": "Cenário 4.2: Paginação (Metadados corretos)"
+          },
+          "response": []
+        },
+        {
+          "name": "GET Buscar Cliente Inexistente (Erro 404)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "// Cenário 4.2: Testa Status 404",
+                  "pm.test(\"Status code is 404 Not Found\", () => { pm.response.to.have.status(404); });",
+                  "",
+                  "// Cenário 4.2: Valida o wrapper de Erro",
+                  "pm.test(\"Resposta é 'success: false' e contém 'error'\", () => {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.success).to.be.false;",
+                  "    pm.expect(jsonData).to.not.have.property('data');",
+                  "    pm.expect(jsonData).to.have.property('error');",
+                  "    pm.expect(jsonData.error.status).to.eql(404);",
+                  "    pm.expect(jsonData.error.message).to.eql(\"Cliente não encontrado com ID: 9999\");",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:8080/api/clientes/9999",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "8080",
+              "path": [
+                "api",
+                "clientes",
+                "9999"
+              ]
+            },
+            "description": "Cenário 4.2: Busca inexistente (404)"
+          },
+          "response": []
+        },
+        {
+          "name": "POST Cadastrar Cliente (Erro 400 - Validação)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "// Cenário 4.2: Testa Status 400",
+                  "pm.test(\"Status code is 400 Bad Request\", () => { pm.response.to.have.status(400); });",
+                  "",
+                  "// Cenário 4.2: Valida o wrapper de Erro de Validação",
+                  "pm.test(\"Resposta de erro de validação está correta\", () => {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.success).to.be.false;",
+                  "    pm.expect(jsonData.error.status).to.eql(400);",
+                  "    pm.expect(jsonData.error.message).to.eql(\"Erro de validação. Verifique os campos.\");",
+                  "    pm.expect(jsonData.error.details).to.be.an('array');",
+                  "    // Verifica se o erro do campo 'email' está presente",
+                  "    const emailError = jsonData.error.details.find(d => d.field === 'email');",
+                  "    pm.expect(emailError).to.not.be.undefined;",
+                  "    pm.expect(emailError.message).to.eql(\"O email deve ser válido\");",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n    \"nome\": \"Cliente Inválido\",\r\n    \"email\": \"email-invalido\",\r\n    \"telefone\": \"11999999999\",\r\n    \"endereco\": \"Rua Válida, 123\"\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "http://localhost:8080/api/clientes",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "8080",
+              "path": [
+                "api",
+                "clientes"
+              ]
+            },
+            "description": "Cenário 4.2: Dados inválidos (400)"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "2. Pedidos (Fluxo Complexo)",
+      "item": [
+        {
+          "name": "POST Criar Pedido (Salva 'pedidoId')",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "// Usa dados do data.sql (Cliente 1, Restaurante 2, Produtos 4 e 6)",
+                  "// Testa 201 Created",
+                  "pm.test(\"Status code is 201 Created\", () => { pm.response.to.have.status(201); });",
+                  "",
+                  "// Valida o wrapper",
+                  "pm.test(\"Resposta é 'success: true' e valida o valor total\", () => {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.success).to.be.true;",
+                  "    // Valida o cálculo: (1 * 18.90) + (2 * 12.90) + 3.50 (taxa) = 48.20",
+                  "    pm.expect(jsonData.data.valorTotal).to.eql(48.20);",
+                  "});",
+                  "",
+                  "// Salva o ID do pedido",
+                  "var jsonData = pm.response.json();",
+                  "if (jsonData.success && jsonData.data.id) {",
+                  "    pm.environment.set(\"pedidoId\", jsonData.data.id);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n    \"clienteId\": 1,\r\n    \"restauranteId\": 2,\r\n    \"itens\": [\r\n        {\"produtoId\": 4, \"quantidade\": 1},\r\n        {\"produtoId\": 6, \"quantidade\": 2}\r\n    ],\r\n    \"observacoes\": \"Criado pelo Postman\"\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "http://localhost:8080/api/pedidos",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "8080",
+              "path": [
+                "api",
+                "pedidos"
+              ]
+            },
+            "description": "Cria um pedido complexo usando os dados do data.sql e salva o 'pedidoId'."
+          },
+          "response": []
+        },
+        {
+          "name": "GET Buscar Pedido por ID (Usa 'pedidoId')",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200 OK\", () => { pm.response.to.have.status(200); });",
+                  "pm.test(\"Valida o wrapper e o ID do pedido\", () => {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.success).to.be.true;",
+                  "    pm.expect(jsonData.data.id).to.eql(parseInt(pm.environment.get(\"pedidoId\")));",
+                  "    pm.expect(jsonData.data.status).to.eql(\"PENDENTE\");",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:8080/api/pedidos/{{pedidoId}}",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "8080",
+              "path": [
+                "api",
+                "pedidos",
+                "{{pedidoId}}"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "PATCH Atualizar Status Pedido (Usa 'pedidoId')",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200 OK\", () => { pm.response.to.have.status(200); });",
+                  "",
+                  "pm.test(\"Valida se o status foi alterado para CONFIRMADO\", () => {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.success).to.be.true;",
+                  "    pm.expect(jsonData.data.id).to.eql(parseInt(pm.environment.get(\"pedidoId\")));",
+                  "    pm.expect(jsonData.data.status).to.eql(\"CONFIRMADO\");",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "PATCH",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:8080/api/pedidos/{{pedidoId}}/status?status=CONFIRMADO",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "8080",
+              "path": [
+                "api",
+                "pedidos",
+                "{{pedidoId}}",
+                "status"
+              ],
+              "query": [
+                {
+                  "key": "status",
+                  "value": "CONFIRMADO"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "DELETE Cancelar Pedido (Usa 'pedidoId')",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "// Cenário 4.2: Testa Status 204 No Content",
+                  "pm.test(\"Status code is 204 No Content\", () => { pm.response.to.have.status(204); });"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:8080/api/pedidos/{{pedidoId}}",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "8080",
+              "path": [
+                "api",
+                "pedidos",
+                "{{pedidoId}}"
+              ]
+            },
+            "description": "Cenário 4.2: Exclusão (204)"
+          },
+          "response": []
+        }
+      ]
+    }
+  ]
+}

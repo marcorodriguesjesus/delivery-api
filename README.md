@@ -32,6 +32,21 @@ Sistema de delivery desenvolvido com Spring Boot e Java 21.
 - Banco: H2 em memória
 - Profile: development
 
+## 🎯 URLs de Acesso (Aplicação deve estar Rodando)
+
+* *API Base:* http://localhost:8080/api
+* [cite_start]*Swagger UI (Documentação):* http://localhost:8080/swagger-ui/index.html [cite: 535, 539]
+* [cite_start]*API Docs (JSON):* http://localhost:8080/api-docs [cite: 540]
+
+## :wrench: Testes e Validação
+
+Este projeto está configurado com Testes de Integração (MockMvc) e uma coleção Postman.
+
+### Testes de Integração (Atividade 4.1)
+Para rodar todos os testes automatizados que validam os cenários de CRUD, paginação e erros:
+```bash
+mvntest
+
 ## 👨‍💻 Desenvolvedor
 [Marco Jesus] - [Gestão de TI - 5º Semestre]  
 Desenvolvido com JDK 21 e Spring Boot 3.5.7
