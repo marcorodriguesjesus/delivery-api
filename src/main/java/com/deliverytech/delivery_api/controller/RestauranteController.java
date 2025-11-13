@@ -36,10 +36,13 @@ public class RestauranteController {
 
     /**
      * 2.2: GET /api/restaurantes - Listar disponíveis
+     * MODIFICADO (ATIVIDADE 1.1) para aceitar filtros
      */
     @GetMapping
-    public ResponseEntity<List<RestauranteResponseDTO>> listarDisponiveis() {
-        return ResponseEntity.ok(restauranteService.buscarRestaurantesDisponiveis());
+    public ResponseEntity<List<RestauranteResponseDTO>> listarRestaurantes(
+            @RequestParam(required = false) String categoria,
+            @RequestParam(required = false) Boolean ativo) {
+        return ResponseEntity.ok(restauranteService.buscarRestaurantes(categoria, ativo));
     }
 
     /**
@@ -68,12 +71,30 @@ public class RestauranteController {
     }
 
     /**
+     * NOVO ENDPOINT (ATIVIDADE 1.1): PATCH /api/restaurantes/{id}/status
+     */
+    @PatchMapping("/{id}/status")
+    public ResponseEntity<RestauranteResponseDTO> ativarDesativar(@PathVariable Long id) {
+        RestauranteResponseDTO restaurante = restauranteService.ativarDesativarRestaurante(id);
+        return ResponseEntity.ok(restaurante);
+    }
+
+    /**
      * 2.2: GET /api/restaurantes/{id}/taxa-entrega/{cep} - Calcular taxa
      */
     @GetMapping("/{id}/taxa-entrega/{cep}")
     public ResponseEntity<BigDecimal> calcularTaxa(@PathVariable Long id, @PathVariable String cep) {
         BigDecimal taxa = restauranteService.calcularTaxaEntrega(id, cep);
         return ResponseEntity.ok(taxa);
+    }
+
+    /**
+     * NOVO ENDPOINT (ATIVIDADE 1.1): GET /api/restaurantes/proximos/{cep}
+     */
+    @GetMapping("/proximos/{cep}")
+    public ResponseEntity<List<RestauranteResponseDTO>> buscarProximos(@PathVariable String cep) {
+        List<RestauranteResponseDTO> restaurantes = restauranteService.buscarRestaurantesProximos(cep);
+        return ResponseEntity.ok(restaurantes);
     }
 
     /**

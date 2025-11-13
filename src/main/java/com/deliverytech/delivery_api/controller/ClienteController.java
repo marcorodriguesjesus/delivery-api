@@ -80,11 +80,6 @@ public class ClienteController {
 
     /**
      * 2.4: GET /api/clientes/{clienteId}/pedidos - Histórico do cliente
-     * (Este endpoint pertence à Atividade 2.4, mas se encaixa melhor aqui)
+     * (Este endpoint foi MOVIDO para /api/pedidos/cliente/{clienteId}
      */
-    @GetMapping("/{clienteId}/pedidos")
-    public ResponseEntity<List<PedidoResumoDTO>> buscarPedidosPorCliente(@PathVariable Long clienteId) {
-        List<PedidoResumoDTO> pedidos = pedidoService.buscarPedidosPorCliente(clienteId);
-        return ResponseEntity.ok(pedidos);
-    }
 }

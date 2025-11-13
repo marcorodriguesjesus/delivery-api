@@ -1,14 +1,17 @@
 package com.deliverytech.delivery_api.controller;
 
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
 import java.util.List;
 
 import com.deliverytech.delivery_api.dto.PedidoRequestDTO;
 import com.deliverytech.delivery_api.dto.PedidoResponseDTO;
+import com.deliverytech.delivery_api.dto.PedidoResumoDTO;
 import com.deliverytech.delivery_api.entity.Restaurante;
 import com.deliverytech.delivery_api.repository.RestauranteRepository;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -35,6 +38,19 @@ public class PedidoController {
     public ResponseEntity<PedidoResponseDTO> criarPedido(@Valid @RequestBody PedidoRequestDTO dto) {
         PedidoResponseDTO pedido = pedidoService.criarPedido(dto);
         return ResponseEntity.status(HttpStatus.CREATED).body(pedido);
+    }
+
+    /**
+     * NOVO ENDPOINT (ATIVIDADE 1.3): GET /api/pedidos - Listar com filtros
+     */
+    @GetMapping
+    public ResponseEntity<List<PedidoResumoDTO>> listarPedidos(
+            @RequestParam(required = false) StatusPedido status,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime dataInicio,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime dataFim) {
+
+        List<PedidoResumoDTO> pedidos = pedidoService.listarPedidos(status, dataInicio, dataFim);
+        return ResponseEntity.ok(pedidos);
     }
 
     /**
@@ -76,5 +92,24 @@ public class PedidoController {
 
         BigDecimal total = pedidoService.calcularTotalPedido(dto.getItens(), dto.getRestauranteId(), r.getTaxaEntrega());
         return ResponseEntity.ok(total);
+    }
+
+    /**
+     * NOVO ENDPOINT (ATIVIDADE 1.3): GET /api/clientes/{clienteId}/pedidos
+     * (Movido do ClienteController para centralizar endpoints de pedido)
+     */
+    @GetMapping("/cliente/{clienteId}")
+    public ResponseEntity<List<PedidoResumoDTO>> buscarPedidosPorCliente(@PathVariable Long clienteId) {
+        List<PedidoResumoDTO> pedidos = pedidoService.buscarPedidosPorCliente(clienteId);
+        return ResponseEntity.ok(pedidos);
+    }
+
+    /**
+     * NOVO ENDPOINT (ATIVIDADE 1.3): GET /api/restaurantes/{restauranteId}/pedidos
+     */
+    @GetMapping("/restaurante/{restauranteId}")
+    public ResponseEntity<List<PedidoResumoDTO>> buscarPedidosPorRestaurante(@PathVariable Long restauranteId) {
+        List<PedidoResumoDTO> pedidos = pedidoService.buscarPedidosPorRestaurante(restauranteId);
+        return ResponseEntity.ok(pedidos);
     }
 }

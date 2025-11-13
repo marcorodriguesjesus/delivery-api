@@ -119,16 +119,7 @@ public class PedidoService {
         List<Pedido> pedidos = pedidoRepository.findByClienteId(clienteId);
 
         return pedidos.stream()
-                .map(pedido -> {
-                    PedidoResumoDTO dto = new PedidoResumoDTO();
-                    dto.setId(pedido.getId());
-                    dto.setNumeroPedido(pedido.getNumeroPedido());
-                    dto.setDataPedido(pedido.getDataPedido());
-                    dto.setStatus(pedido.getStatus());
-                    dto.setValorTotal(pedido.getValorTotal());
-                    dto.setNomeRestaurante(pedido.getRestaurante().getNome());
-                    return dto;
-                })
+                .map(this::mapToPedidoResumoDTO) // Usando o helper
                 .collect(Collectors.toList());
     }
 
@@ -202,5 +193,60 @@ public class PedidoService {
         Pedido pedidoSalvo = pedidoRepository.save(pedido);
 
         return buscarPedidoPorId(pedidoSalvo.getId());
+    }
+
+    /**
+     * NOVO MÉTODO (ATIVIDADE 1.3): Listar Pedidos com Filtros
+     */
+    @Transactional(readOnly = true)
+    public List<PedidoResumoDTO> listarPedidos(StatusPedido status, LocalDateTime dataInicio, LocalDateTime dataFim) {
+        List<Pedido> pedidos;
+
+        if (status != null && dataInicio != null && dataFim != null) {
+            pedidos = pedidoRepository.findByDataPedidoBetweenAndStatus(dataInicio, dataFim, status.name());
+        } else if (status != null) {
+            pedidos = pedidoRepository.findByStatus(status);
+        } else if (dataInicio != null && dataFim != null) {
+            pedidos = pedidoRepository.findByDataPedidoBetween(dataInicio, dataFim);
+        } else {
+            pedidos = pedidoRepository.findAll();
+        }
+
+        return pedidos.stream()
+                .map(this::mapToPedidoResumoDTO) // Usando o helper
+                .collect(Collectors.toList());
+    }
+
+    /**
+     * NOVO MÉTODO (ATIVIDADE 1.3): Buscar Pedidos por Restaurante
+     */
+    @Transactional(readOnly = true)
+    public List<PedidoResumoDTO> buscarPedidosPorRestaurante(Long restauranteId) {
+        if (!restauranteRepository.existsById(restauranteId)) {
+            throw new EntityNotFoundException("Restaurante não encontrado: " + restauranteId);
+        }
+
+        List<Pedido> pedidos = pedidoRepository.findByRestauranteIdOrderByDataPedidoDesc(restauranteId);
+
+        return pedidos.stream()
+                .map(this::mapToPedidoResumoDTO) // Usando o helper
+                .collect(Collectors.toList());
+    }
+
+
+    /**
+     * NOVO MÉTODO (Helper): Mapeia Pedido para PedidoResumoDTO
+     */
+    private PedidoResumoDTO mapToPedidoResumoDTO(Pedido pedido) {
+        PedidoResumoDTO dto = new PedidoResumoDTO();
+        dto.setId(pedido.getId());
+        dto.setNumeroPedido(pedido.getNumeroPedido());
+        dto.setDataPedido(pedido.getDataPedido());
+        dto.setStatus(pedido.getStatus());
+        dto.setValorTotal(pedido.getValorTotal());
+        if (pedido.getRestaurante() != null) {
+            dto.setNomeRestaurante(pedido.getRestaurante().getNome());
+        }
+        return dto;
     }
 }

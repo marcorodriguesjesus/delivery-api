@@ -57,10 +57,22 @@ public class RestauranteService {
 
     /**
      * 1.2: Buscar Restaurantes Disponíveis (Apenas Ativos)
+     * MODIFICADO (ATIVIDADE 1.1) para aceitar filtros
      */
     @Transactional(readOnly = true)
-    public List<RestauranteResponseDTO> buscarRestaurantesDisponiveis() {
-        List<Restaurante> restaurantes = restauranteRepository.findByAtivoTrue();
+    public List<RestauranteResponseDTO> buscarRestaurantes(String categoria, Boolean ativo) {
+        List<Restaurante> restaurantes;
+
+        if (categoria != null && ativo != null) {
+            restaurantes = restauranteRepository.findByCategoriaAndAtivo(categoria, ativo);
+        } else if (categoria != null) {
+            restaurantes = restauranteRepository.findByCategoria(categoria);
+        } else if (ativo != null) {
+            restaurantes = restauranteRepository.findByAtivo(ativo);
+        } else {
+            // Se nenhum filtro, busca todos (ou pode manter o padrão de só ativos)
+            restaurantes = restauranteRepository.findAll();
+        }
 
         return restaurantes.stream()
                 .map(restaurante -> modelMapper.map(restaurante, RestauranteResponseDTO.class))
@@ -118,6 +130,29 @@ public class RestauranteService {
         }
     }
 
-    // Você tinha métodos extras (inativar, deletar) que não estão no
-    // roteiro 4, mas podem ser mantidos se você quiser.
+    /**
+     * NOVO MÉTODO (ATIVIDADE 1.1): Ativar/Desativar
+     */
+    public RestauranteResponseDTO ativarDesativarRestaurante(Long id) {
+        Restaurante restaurante = restauranteRepository.findById(id)
+                .orElseThrow(() -> new EntityNotFoundException("Restaurante não encontrado com ID: " + id));
+
+        restaurante.setAtivo(!restaurante.getAtivo()); // Inverte o status atual
+        Restaurante restauranteSalvo = restauranteRepository.save(restaurante);
+        return modelMapper.map(restauranteSalvo, RestauranteResponseDTO.class);
+    }
+
+    /**
+     * NOVO MÉTODO (ATIVIDADE 1.1): Buscar Restaurantes Próximos (Placeholder)
+     */
+    @Transactional(readOnly = true)
+    public List<RestauranteResponseDTO> buscarRestaurantesProximos(String cep) {
+        // Lógica de placeholder: Apenas retorna todos os ativos.
+        // Uma implementação real exigiria integração com API de geolocalização.
+        List<Restaurante> restaurantes = restauranteRepository.findByAtivoTrue();
+        return restaurantes.stream()
+                .map(restaurante -> modelMapper.map(restaurante, RestauranteResponseDTO.class))
+                .collect(Collectors.toList());
+    }
+
 }

@@ -35,4 +35,8 @@ public interface RestauranteRepository extends JpaRepository <Restaurante, Long>
             "ORDER BY faturamentoTotal DESC",
             nativeQuery = true)
     List<RelatorioFaturamentoCategoria> findFaturamentoPorCategoria();
+
+    // NOVOS MÉTODOS (ATIVIDADE 1.1)
+    List<Restaurante> findByAtivo(Boolean ativo);
+    List<Restaurante> findByCategoriaAndAtivo(String categoria, Boolean ativo);
 }

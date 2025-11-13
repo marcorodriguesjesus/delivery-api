@@ -14,16 +14,16 @@ import java.util.List;
 @Repository
 public interface ProdutoRepository extends JpaRepository <Produto, Long> {
     // buscar produto por restaurante ID
-     List<Produto> findByRestauranteId(Long restauranteId);
+    List<Produto> findByRestauranteId(Long restauranteId);
 
-     // buscar por disponibilidade
-     List<Produto> findByDisponivelTrue();
+    // buscar por disponibilidade
+    List<Produto> findByDisponivelTrue();
 
-     // buscar por categoria
-     List<Produto> findByCategoria(String categoria);
+    // buscar por categoria
+    List<Produto> findByCategoria(String categoria);
 
-     // buscar por preço menor ou igual a X
-     List<Produto> findByPrecoLessThanEqual(Double preco);
+    // buscar por preço menor ou igual a X
+    List<Produto> findByPrecoLessThanEqual(Double preco);
 
     @Query(value = "SELECT pr.nome as produtoNome, COUNT(p.id) as quantidadeVendida " +
             "FROM produtos pr " +
@@ -35,5 +35,7 @@ public interface ProdutoRepository extends JpaRepository <Produto, Long> {
     List<RelatorioProdutoVendido> findProdutosMaisVendidos(@Param("limite") int limite);
 
     List<Produto> findByRestauranteIdAndDisponivelTrue(Long restauranteId);
-    
+
+    // NOVO MÉTODO (ATIVIDADE 1.2)
+    List<Produto> findByNomeContainingIgnoreCase(String nome);
 }

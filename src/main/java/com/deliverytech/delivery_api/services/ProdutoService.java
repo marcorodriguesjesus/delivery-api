@@ -118,4 +118,25 @@ public class ProdutoService {
                 .map(produto -> modelMapper.map(produto, ProdutoResponseDTO.class))
                 .collect(Collectors.toList());
     }
+
+    /**
+     * NOVO MÉTODO (ATIVIDADE 1.2): Remover produto
+     */
+    public void removerProduto(Long id) {
+        if (!produtoRepository.existsById(id)) {
+            throw new EntityNotFoundException("Produto não encontrado com ID: " + id);
+        }
+        produtoRepository.deleteById(id);
+    }
+
+    /**
+     * NOVO MÉTODO (ATIVIDADE 1.2): Buscar produto por nome
+     */
+    @Transactional(readOnly = true)
+    public List<ProdutoResponseDTO> buscarProdutosPorNome(String nome) {
+        List<Produto> produtos = produtoRepository.findByNomeContainingIgnoreCase(nome);
+        return produtos.stream()
+                .map(produto -> modelMapper.map(produto, ProdutoResponseDTO.class))
+                .collect(Collectors.toList());
+    }
 }

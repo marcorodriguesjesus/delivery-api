@@ -46,6 +46,14 @@ public class ProdutoController {
     }
 
     /**
+     * NOVO ENDPOINT (ATIVIDADE 1.2): GET /api/produtos/buscar?nome={nome}
+     */
+    @GetMapping("/buscar")
+    public ResponseEntity<List<ProdutoResponseDTO>> buscarPorNome(@RequestParam String nome) {
+        return ResponseEntity.ok(produtoService.buscarProdutosPorNome(nome));
+    }
+
+    /**
      * 2.3: PUT /api/produtos/{id} - Atualizar produto
      */
     @PutMapping("/{id}")
@@ -61,5 +69,14 @@ public class ProdutoController {
     public ResponseEntity<ProdutoResponseDTO> alterarDisponibilidade(@PathVariable Long id, @RequestParam boolean disponivel) {
         ProdutoResponseDTO produto = produtoService.alterarDisponibilidade(id, disponivel);
         return ResponseEntity.ok(produto);
+    }
+
+    /**
+     * NOVO ENDPOINT (ATIVIDADE 1.2): DELETE /api/produtos/{id}
+     */
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> remover(@PathVariable Long id) {
+        produtoService.removerProduto(id);
+        return ResponseEntity.noContent().build();
     }
 }
