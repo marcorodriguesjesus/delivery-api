@@ -10,6 +10,8 @@ import com.deliverytech.delivery_api.exceptions.BusinessException;
 import com.deliverytech.delivery_api.exceptions.EntityNotFoundException;
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -67,14 +69,16 @@ public class ClienteService {
 
     /**
      * 1.1: Listar Clientes Ativos
+     * ATIVIDADE 3.4: Modificado para aceitar Pageable e retornar Page<DTO>
      */
     @Transactional(readOnly = true)
-    public List<ClienteResponseDTO> listarClientesAtivos() {
-        List<Cliente> clientesAtivos = clienteRepository.findByAtivoTrue();
+    public Page<ClienteResponseDTO> listarClientesAtivos(Pageable pageable) {
+        // 1. Busca paginada do repositório
+        Page<Cliente> clientesAtivosPage = clienteRepository.findByAtivoTrue(pageable);
 
-        return clientesAtivos.stream()
-                .map(cliente -> modelMapper.map(cliente, ClienteResponseDTO.class))
-                .collect(Collectors.toList());
+        // 2. Converte a Page<Entidade> para Page<DTO> usando o .map() do Page
+        return clientesAtivosPage
+                .map(cliente -> modelMapper.map(cliente, ClienteResponseDTO.class));
     }
 
     /**

@@ -1,71 +1,100 @@
 package com.deliverytech.delivery_api.exceptions;
 
+import com.deliverytech.delivery_api.dto.ApiError;
+import com.deliverytech.delivery_api.dto.ApiResponse;
+import com.deliverytech.delivery_api.dto.FieldValidationError;
+import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
-import java.time.LocalDateTime;
-import java.util.HashMap;
-import java.util.Map;
+
+// Importações de java.time, java.util.Map e java.util.HashMap não são mais necessárias
+import java.util.List;
+import java.util.stream.Collectors;
 
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
+    /**
+     * ATIVIDADE 3.1 e 3.2: Handler para Entidade Não Encontrada (404)
+     * Agora retorna o envelope ApiResponse padronizado.
+     */
     @ExceptionHandler(EntityNotFoundException.class)
-    public ResponseEntity<ValidationErrorResponse> handleEntityNotFound(EntityNotFoundException ex) {
-        ValidationErrorResponse error = new ValidationErrorResponse(
-                HttpStatus.NOT_FOUND.value(),
-                "Entidade não encontrada",
+    public ResponseEntity<ApiResponse<Object>> handleEntityNotFound(
+            EntityNotFoundException ex, HttpServletRequest request) {
+
+        ApiError error = new ApiError(
+                HttpStatus.NOT_FOUND,
                 ex.getMessage(),
-                LocalDateTime.now()
+                request.getRequestURI()
         );
-        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(error);
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(ApiResponse.error(error));
     }
 
+    /**
+     * ATIVIDADE 3.1 e 3.2: Handler para Regra de Negócio (400)
+     * Agora retorna o envelope ApiResponse padronizado.
+     */
     @ExceptionHandler(BusinessException.class)
-    public ResponseEntity<ValidationErrorResponse> handleBusinessException(BusinessException ex) {
-        ValidationErrorResponse error = new ValidationErrorResponse(
-                HttpStatus.BAD_REQUEST.value(),
-                "Erro de regra de negócio",
+    public ResponseEntity<ApiResponse<Object>> handleBusinessException(
+            BusinessException ex, HttpServletRequest request) {
+
+        ApiError error = new ApiError(
+                HttpStatus.BAD_REQUEST,
                 ex.getMessage(),
-                LocalDateTime.now()
+                request.getRequestURI()
         );
-        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(error);
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(ApiResponse.error(error));
     }
 
-    // ... (o resto do arquivo continua igual) ...
-
+    /**
+     * ATIVIDADE 3.1 e 3.2: Handler para Erros de Validação (400)
+     * Agora retorna o envelope ApiResponse com detalhes dos campos.
+     */
     @ExceptionHandler(MethodArgumentNotValidException.class)
-    public ResponseEntity<ValidationErrorResponse> handleValidationException(
-            MethodArgumentNotValidException ex) {
+    public ResponseEntity<ApiResponse<Object>> handleValidationException(
+            MethodArgumentNotValidException ex, HttpServletRequest request) {
 
-        Map<String, String> errors = new HashMap<>();
-        ex.getBindingResult().getAllErrors().forEach(error -> {
-            String fieldName = ((FieldError) error).getField();
-            String errorMessage = error.getDefaultMessage();
-            errors.put(fieldName, errorMessage);
-        });
+        // Converte os erros de campo para o nosso DTO auxiliar
+        List<FieldValidationError> validationErrors = ex.getBindingResult().getAllErrors().stream()
+                .map(error -> new FieldValidationError(
+                        ((FieldError) error).getField(),
+                        error.getDefaultMessage()
+                ))
+                .collect(Collectors.toList());
 
-        ValidationErrorResponse errorResponse = new ValidationErrorResponse(
-                HttpStatus.BAD_REQUEST.value(),
-                "Dados inválidos",
-                errors.toString(),
-                LocalDateTime.now()
+        ApiError error = new ApiError(
+                HttpStatus.BAD_REQUEST,
+                "Erro de validação. Verifique os campos.",
+                request.getRequestURI()
         );
+        error.setDetails(validationErrors); // Anexa os detalhes
 
-        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorResponse);
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(ApiResponse.error(error));
     }
 
+    /**
+     * ATIVIDADE 3.1 e 3.2: Handler Genérico para Erros Inesperados (500)
+     * Agora retorna o envelope ApiResponse padronizado.
+     */
     @ExceptionHandler(Exception.class)
-    public ResponseEntity<ValidationErrorResponse> handleGenericException(Exception ex) {
-        ValidationErrorResponse error = new ValidationErrorResponse(
-                HttpStatus.INTERNAL_SERVER_ERROR.value(),
-                "Erro interno do servidor",
+    public ResponseEntity<ApiResponse<Object>> handleGenericException(
+            Exception ex, HttpServletRequest request) {
+
+        // Logar o stack trace real no console do servidor (importante para debug)
+        ex.printStackTrace();
+
+        ApiError error = new ApiError(
+                HttpStatus.INTERNAL_SERVER_ERROR,
                 "Ocorreu um erro inesperado: " + ex.getMessage(),
-                LocalDateTime.now()
+                request.getRequestURI()
         );
-        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(error);
+
+        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(ApiResponse.error(error));
     }
+
+    // O DTO ValidationErrorResponse não é mais necessário, pois foi substituído por ApiError
 }

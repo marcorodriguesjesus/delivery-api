@@ -1,6 +1,8 @@
 package com.deliverytech.delivery_api.repository;
 
 import com.deliverytech.delivery_api.dto.reports.RelatorioProdutoVendido;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -19,8 +21,10 @@ public interface ProdutoRepository extends JpaRepository <Produto, Long> {
     // buscar por disponibilidade
     List<Produto> findByDisponivelTrue();
 
-    // buscar por categoria
-    List<Produto> findByCategoria(String categoria);
+    /**
+     * ATIVIDADE 3.4: Modificado para suportar paginação
+     */
+    Page<Produto> findByCategoria(String categoria, Pageable pageable);
 
     // buscar por preço menor ou igual a X
     List<Produto> findByPrecoLessThanEqual(Double preco);
@@ -34,8 +38,13 @@ public interface ProdutoRepository extends JpaRepository <Produto, Long> {
             nativeQuery = true)
     List<RelatorioProdutoVendido> findProdutosMaisVendidos(@Param("limite") int limite);
 
-    List<Produto> findByRestauranteIdAndDisponivelTrue(Long restauranteId);
+    /**
+     * ATIVIDADE 3.4: Modificado para suportar paginação
+     */
+    Page<Produto> findByRestauranteIdAndDisponivelTrue(Long restauranteId, Pageable pageable);
 
-    // NOVO MÉTODO (ATIVIDADE 1.2)
-    List<Produto> findByNomeContainingIgnoreCase(String nome);
+    /**
+     * ATIVIDADE 3.4: Modificado para suportar paginação
+     */
+    Page<Produto> findByNomeContainingIgnoreCase(String nome, Pageable pageable);
 }

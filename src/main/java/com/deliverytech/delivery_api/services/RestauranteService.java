@@ -10,6 +10,8 @@ import com.deliverytech.delivery_api.exceptions.BusinessException;
 import com.deliverytech.delivery_api.exceptions.EntityNotFoundException;
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -56,39 +58,37 @@ public class RestauranteService {
     }
 
     /**
-     * 1.2: Buscar Restaurantes Disponíveis (Apenas Ativos)
-     * MODIFICADO (ATIVIDADE 1.1) para aceitar filtros
+     * ATIVIDADE 3.4: Método 'buscarRestaurantesDisponiveis' refatorado para
+     * 'buscarRestaurantes' com filtros e paginação.
      */
     @Transactional(readOnly = true)
-    public List<RestauranteResponseDTO> buscarRestaurantes(String categoria, Boolean ativo) {
-        List<Restaurante> restaurantes;
+    public Page<RestauranteResponseDTO> buscarRestaurantes(String categoria, Boolean ativo, Pageable pageable) {
+        Page<Restaurante> restaurantesPage;
 
         if (categoria != null && ativo != null) {
-            restaurantes = restauranteRepository.findByCategoriaAndAtivo(categoria, ativo);
+            restaurantesPage = restauranteRepository.findByCategoriaAndAtivo(categoria, ativo, pageable);
         } else if (categoria != null) {
-            restaurantes = restauranteRepository.findByCategoria(categoria);
+            restaurantesPage = restauranteRepository.findByCategoria(categoria, pageable);
         } else if (ativo != null) {
-            restaurantes = restauranteRepository.findByAtivo(ativo);
+            restaurantesPage = restauranteRepository.findByAtivo(ativo, pageable);
         } else {
-            // Se nenhum filtro, busca todos (ou pode manter o padrão de só ativos)
-            restaurantes = restauranteRepository.findAll();
+            // Se nenhum filtro, busca todos paginados
+            restaurantesPage = restauranteRepository.findAll(pageable);
         }
 
-        return restaurantes.stream()
-                .map(restaurante -> modelMapper.map(restaurante, RestauranteResponseDTO.class))
-                .collect(Collectors.toList());
+        return restaurantesPage.map(restaurante -> modelMapper.map(restaurante, RestauranteResponseDTO.class));
     }
 
     /**
      * 1.2: Buscar Restaurantes por Categoria
+     * ATIVIDADE 3.4: Este método não é mais necessário, pois 'buscarRestaurantes' já cobre isso.
+     * Mas pode ser mantido se houver uma regra de negócio específica.
      */
     @Transactional(readOnly = true)
-    public List<RestauranteResponseDTO> buscarRestaurantesPorCategoria(String categoria) {
-        List<Restaurante> restaurantes = restauranteRepository.findByCategoria(categoria);
+    public Page<RestauranteResponseDTO> buscarRestaurantesPorCategoria(String categoria, Pageable pageable) {
+        Page<Restaurante> restaurantes = restauranteRepository.findByCategoria(categoria, pageable);
 
-        return restaurantes.stream()
-                .map(restaurante -> modelMapper.map(restaurante, RestauranteResponseDTO.class))
-                .collect(Collectors.toList());
+        return restaurantes.map(restaurante -> modelMapper.map(restaurante, RestauranteResponseDTO.class));
     }
 
     /**
@@ -113,7 +113,6 @@ public class RestauranteService {
 
     /**
      * 1.2: Calcular Taxa de Entrega (Lógica de entrega)
-     * (Implementação de exemplo)
      */
     @Transactional(readOnly = true)
     public BigDecimal calcularTaxaEntrega(Long restauranteId, String cep) {
@@ -121,8 +120,6 @@ public class RestauranteService {
                 .orElseThrow(() -> new EntityNotFoundException("Restaurante não encontrado com ID: " + restauranteId));
 
         // Lógica de placeholder:
-        // Se o CEP termina com "0", a taxa é a padrão.
-        // Senão, é a taxa padrão + R$ 2.00
         if (cep != null && cep.endsWith("0")) {
             return restaurante.getTaxaEntrega();
         } else {
@@ -143,16 +140,13 @@ public class RestauranteService {
     }
 
     /**
-     * NOVO MÉTODO (ATIVIDADE 1.1): Buscar Restaurantes Próximos (Placeholder)
+     * NOVO MÉTODO (ATIVIDADE 1.1 e 3.4): Buscar Restaurantes Próximos (Placeholder)
+     * Modificado para aceitar paginação
      */
     @Transactional(readOnly = true)
-    public List<RestauranteResponseDTO> buscarRestaurantesProximos(String cep) {
-        // Lógica de placeholder: Apenas retorna todos os ativos.
-        // Uma implementação real exigiria integração com API de geolocalização.
-        List<Restaurante> restaurantes = restauranteRepository.findByAtivoTrue();
-        return restaurantes.stream()
-                .map(restaurante -> modelMapper.map(restaurante, RestauranteResponseDTO.class))
-                .collect(Collectors.toList());
+    public Page<RestauranteResponseDTO> buscarRestaurantesProximos(String cep, Pageable pageable) {
+        // Lógica de placeholder: Apenas retorna todos os ativos paginados.
+        Page<Restaurante> restaurantes = restauranteRepository.findByAtivoTrue(pageable);
+        return restaurantes.map(restaurante -> modelMapper.map(restaurante, RestauranteResponseDTO.class));
     }
-
 }

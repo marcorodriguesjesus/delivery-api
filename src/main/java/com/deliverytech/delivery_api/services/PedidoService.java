@@ -12,6 +12,8 @@ import com.deliverytech.delivery_api.exceptions.BusinessException;
 import com.deliverytech.delivery_api.exceptions.EntityNotFoundException;
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -30,16 +32,12 @@ public class PedidoService {
 
     @Autowired
     private PedidoRepository pedidoRepository;
-
     @Autowired
     private ClienteRepository clienteRepository;
-
     @Autowired
     private RestauranteRepository restauranteRepository;
-
     @Autowired
     private ProdutoRepository produtoRepository;
-
     @Autowired
     private ModelMapper modelMapper;
 
@@ -47,21 +45,18 @@ public class PedidoService {
      * 1.4: Criar Pedido (Transação Complexa)
      */
     public PedidoResponseDTO criarPedido(PedidoRequestDTO dto) {
-        // 1. Validar Cliente
         Cliente cliente = clienteRepository.findById(dto.getClienteId())
                 .orElseThrow(() -> new EntityNotFoundException("Cliente não encontrado: " + dto.getClienteId()));
         if (!cliente.getAtivo()) {
             throw new BusinessException("Cliente inativo não pode fazer pedidos");
         }
 
-        // 2. Validar Restaurante
         Restaurante restaurante = restauranteRepository.findById(dto.getRestauranteId())
                 .orElseThrow(() -> new EntityNotFoundException("Restaurante não encontrado: " + dto.getRestauranteId()));
         if (!restaurante.getAtivo()) {
             throw new BusinessException("Restaurante não está disponível");
         }
 
-        // 3. Calcular Total (Valida produtos e disponibilidade)
         BigDecimal valorTotal = calcularTotalPedido(dto.getItens(), restaurante.getId(), restaurante.getTaxaEntrega());
 
         Pedido pedido = new Pedido();
@@ -69,7 +64,7 @@ public class PedidoService {
         pedido.setRestaurante(restaurante);
         pedido.setStatus(StatusPedido.PENDENTE.name());
         pedido.setDataPedido(LocalDateTime.now());
-        pedido.setNumeroPedido(UUID.randomUUID().toString().substring(0, 10).toUpperCase()); // Número de pedido único
+        pedido.setNumeroPedido(UUID.randomUUID().toString().substring(0, 10).toUpperCase());
         pedido.setValorTotal(valorTotal);
         pedido.setObservacoes(dto.getObservacoes());
 
@@ -80,13 +75,7 @@ public class PedidoService {
 
         Pedido pedidoSalvo = pedidoRepository.save(pedido);
 
-        // Monta a resposta
-        PedidoResponseDTO response = modelMapper.map(pedidoSalvo, PedidoResponseDTO.class);
-        response.setCliente(modelMapper.map(cliente, ClienteResponseDTO.class));
-        response.setRestaurante(modelMapper.map(restaurante, RestauranteResponseDTO.class));
-        response.setItens(dto.getItens()); // Devolve a lista de DTOs de itens
-
-        return response;
+        return mapToPedidoResponseDTO(pedidoSalvo, cliente, restaurante, dto.getItens());
     }
 
     /**
@@ -97,30 +86,24 @@ public class PedidoService {
         Pedido pedido = pedidoRepository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException("Pedido não encontrado: " + id));
 
-        // Carrega dados aninhados
         Cliente cliente = clienteRepository.findById(pedido.getClienteId()).orElse(null);
 
-        PedidoResponseDTO response = modelMapper.map(pedido, PedidoResponseDTO.class);
-        response.setCliente(modelMapper.map(cliente, ClienteResponseDTO.class));
-        response.setRestaurante(modelMapper.map(pedido.getRestaurante(), RestauranteResponseDTO.class));
-
-        return response;
+        return mapToPedidoResponseDTO(pedido, cliente, pedido.getRestaurante(), null);
     }
 
     /**
      * 1.4: Buscar Pedidos por Cliente (Histórico)
+     * ATIVIDADE 3.4: Modificado para aceitar Pageable e retornar Page<DTO>
      */
     @Transactional(readOnly = true)
-    public List<PedidoResumoDTO> buscarPedidosPorCliente(Long clienteId) {
+    public Page<PedidoResumoDTO> buscarPedidosPorCliente(Long clienteId, Pageable pageable) {
         if (!clienteRepository.existsById(clienteId)) {
             throw new EntityNotFoundException("Cliente não encontrado: " + clienteId);
         }
 
-        List<Pedido> pedidos = pedidoRepository.findByClienteId(clienteId);
+        Page<Pedido> pedidosPage = pedidoRepository.findByClienteId(clienteId, pageable);
 
-        return pedidos.stream()
-                .map(this::mapToPedidoResumoDTO) // Usando o helper
-                .collect(Collectors.toList());
+        return pedidosPage.map(this::mapToPedidoResumoDTO);
     }
 
     /**
@@ -130,53 +113,46 @@ public class PedidoService {
         Pedido pedido = pedidoRepository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException("Pedido não encontrado: " + id));
 
-        // Regra de transição
         StatusPedido statusAtual = StatusPedido.valueOf(pedido.getStatus());
         if (statusAtual == StatusPedido.ENTREGUE || statusAtual == StatusPedido.CANCELADO) {
             throw new BusinessException("Pedido já finalizado ou cancelado. Não é possível alterar o status.");
         }
-        // (Adicionar mais regras de transição se necessário)
 
         pedido.setStatus(status.name());
         Pedido pedidoSalvo = pedidoRepository.save(pedido);
 
-        return buscarPedidoPorId(pedidoSalvo.getId()); // Retorna o DTO completo
+        return buscarPedidoPorId(pedidoSalvo.getId()); // Reutiliza a busca
     }
 
     /**
      * 1.4: Calcular Total do Pedido
-     * (Método auxiliar para 'criarPedido' e pode ser usado pelo Controller)
      */
     @Transactional(readOnly = true)
     public BigDecimal calcularTotalPedido(List<ItemPedidoDTO> itens, Long restauranteId, BigDecimal taxaEntrega) {
         BigDecimal subtotal = BigDecimal.ZERO;
 
         for (ItemPedidoDTO item : itens) {
-            // 3. Validar Produtos
             Produto produto = produtoRepository.findById(item.getProdutoId())
                     .orElseThrow(() -> new EntityNotFoundException("Produto não encontrado: " + item.getProdutoId()));
 
             if (!produto.getDisponivel()) {
                 throw new BusinessException("Produto indisponível: " + produto.getNome());
             }
-
             if (!produto.getRestauranteId().equals(restauranteId)) {
                 throw new BusinessException("Produto " + produto.getNome() + " não pertence ao restaurante selecionado.");
             }
 
-            // Soma ao subtotal
             BigDecimal quantidade = new BigDecimal(item.getQuantidade());
             subtotal = subtotal.add(produto.getPreco().multiply(quantidade));
         }
-
-        // 4. Calcular Total
         return subtotal.add(taxaEntrega);
     }
 
     /**
      * 1.4: Cancelar Pedido
+     * ATIVIDADE 3.1: Modificado para retornar void
      */
-    public PedidoResponseDTO cancelarPedido(Long id) {
+    public void cancelarPedido(Long id) {
         Pedido pedido = pedidoRepository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException("Pedido não encontrado: " + id));
 
@@ -190,47 +166,53 @@ public class PedidoService {
         }
 
         pedido.setStatus(StatusPedido.CANCELADO.name());
-        Pedido pedidoSalvo = pedidoRepository.save(pedido);
-
-        return buscarPedidoPorId(pedidoSalvo.getId());
+        pedidoRepository.save(pedido);
     }
 
     /**
      * NOVO MÉTODO (ATIVIDADE 1.3): Listar Pedidos com Filtros
+     * ATIVIDADE 3.4: Modificado para aceitar Pageable e retornar Page<DTO>
      */
     @Transactional(readOnly = true)
-    public List<PedidoResumoDTO> listarPedidos(StatusPedido status, LocalDateTime dataInicio, LocalDateTime dataFim) {
-        List<Pedido> pedidos;
+    public Page<PedidoResumoDTO> listarPedidos(StatusPedido status, LocalDateTime dataInicio, LocalDateTime dataFim, Pageable pageable) {
+        Page<Pedido> pedidosPage;
+        String statusName = (status != null) ? status.name() : null;
 
-        if (status != null && dataInicio != null && dataFim != null) {
-            pedidos = pedidoRepository.findByDataPedidoBetweenAndStatus(dataInicio, dataFim, status.name());
-        } else if (status != null) {
-            pedidos = pedidoRepository.findByStatus(status);
+        if (statusName != null && dataInicio != null && dataFim != null) {
+            pedidosPage = pedidoRepository.findByDataPedidoBetweenAndStatus(dataInicio, dataFim, statusName, pageable);
+        } else if (statusName != null) {
+            pedidosPage = pedidoRepository.findByStatus(statusName, pageable);
         } else if (dataInicio != null && dataFim != null) {
-            pedidos = pedidoRepository.findByDataPedidoBetween(dataInicio, dataFim);
+            pedidosPage = pedidoRepository.findByDataPedidoBetween(dataInicio, dataFim, pageable);
         } else {
-            pedidos = pedidoRepository.findAll();
+            pedidosPage = pedidoRepository.findAll(pageable);
         }
 
-        return pedidos.stream()
-                .map(this::mapToPedidoResumoDTO) // Usando o helper
-                .collect(Collectors.toList());
+        return pedidosPage.map(this::mapToPedidoResumoDTO);
     }
 
     /**
      * NOVO MÉTODO (ATIVIDADE 1.3): Buscar Pedidos por Restaurante
+     * ATIVIDADE 3.4: Modificado para aceitar Pageable e retornar Page<DTO>
      */
     @Transactional(readOnly = true)
-    public List<PedidoResumoDTO> buscarPedidosPorRestaurante(Long restauranteId) {
+    public Page<PedidoResumoDTO> buscarPedidosPorRestaurante(Long restauranteId, Pageable pageable) {
         if (!restauranteRepository.existsById(restauranteId)) {
             throw new EntityNotFoundException("Restaurante não encontrado: " + restauranteId);
         }
 
-        List<Pedido> pedidos = pedidoRepository.findByRestauranteIdOrderByDataPedidoDesc(restauranteId);
+        Page<Pedido> pedidos = pedidoRepository.findByRestauranteIdOrderByDataPedidoDesc(restauranteId, pageable);
 
-        return pedidos.stream()
-                .map(this::mapToPedidoResumoDTO) // Usando o helper
-                .collect(Collectors.toList());
+        return pedidos.map(this::mapToPedidoResumoDTO);
+    }
+
+    /**
+     * NOVO MÉTODO (ATIVIDADE 3.4): Suporte para RelatorioController
+     */
+    @Transactional(readOnly = true)
+    public Page<PedidoResumoDTO> buscarPedidosAcimaDeValor(BigDecimal valor, Pageable pageable) {
+        Page<Pedido> pedidosPage = pedidoRepository.findByValorTotalGreaterThan(valor, pageable);
+        return pedidosPage.map(this::mapToPedidoResumoDTO);
     }
 
 
@@ -248,5 +230,20 @@ public class PedidoService {
             dto.setNomeRestaurante(pedido.getRestaurante().getNome());
         }
         return dto;
+    }
+
+    /**
+     * NOVO MÉTODO (Helper): Mapeia Pedido para PedidoResponseDTO (completo)
+     */
+    private PedidoResponseDTO mapToPedidoResponseDTO(Pedido pedido, Cliente cliente, Restaurante restaurante, List<ItemPedidoDTO> itens) {
+        PedidoResponseDTO response = modelMapper.map(pedido, PedidoResponseDTO.class);
+        if (cliente != null) {
+            response.setCliente(modelMapper.map(cliente, ClienteResponseDTO.class));
+        }
+        if (restaurante != null) {
+            response.setRestaurante(modelMapper.map(restaurante, RestauranteResponseDTO.class));
+        }
+        response.setItens(itens); // Itens vêm do DTO de request ou são nulos na busca
+        return response;
     }
 }

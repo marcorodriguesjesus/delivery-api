@@ -5,7 +5,8 @@ import java.time.LocalDateTime;
 import java.util.List;
 
 import com.deliverytech.delivery_api.dto.reports.RelatorioVendasRestaurante;
-import com.deliverytech.delivery_api.enums.StatusPedido;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
@@ -16,20 +17,20 @@ import com.deliverytech.delivery_api.entity.Pedido;
 public interface PedidoRepository extends JpaRepository <Pedido, Long> {
 
     // Buscar pedidos por cliente ID
-    List<Pedido> findByClienteId(Long clienteId);
+    Page<Pedido> findByClienteId(Long clienteId, Pageable pageable);
 
     // Buscar por número do pedido
     Pedido findByNumeroPedido(String numeroPedido);
 
     //Buscar pedidos por restaurante ID
-    List<Pedido> findByRestauranteIdOrderByDataPedidoDesc(Long restauranteId);
+    Page<Pedido> findByRestauranteIdOrderByDataPedidoDesc(Long restauranteId, Pageable pageable);
 
     List<Pedido> findTop10ByOrderByDataPedidoDesc();
 
     // Buscar pedidos entre datas
-    List<Pedido> findByDataPedidoBetween(LocalDateTime dataInicio, LocalDateTime dataFim);
+    Page<Pedido> findByDataPedidoBetween(LocalDateTime dataInicio, LocalDateTime dataFim, Pageable pageable);
 
-    List<Pedido> findByStatus(StatusPedido status);
+    Page<Pedido> findByStatus(String status, Pageable pageable); // Status é String na entidade
 
     @Query("SELECT p.restaurante.nome as restauranteNome, SUM(p.valorTotal) as totalVendas " +
             "FROM Pedido p " +
@@ -37,7 +38,11 @@ public interface PedidoRepository extends JpaRepository <Pedido, Long> {
             "ORDER BY totalVendas DESC")
     List<RelatorioVendasRestaurante> findTotalVendasPorRestaurante();
 
-    List<Pedido> findByValorTotalGreaterThan(BigDecimal valor);
+    // ATIVIDADE 3.4: Corrigido para suportar paginação
+    Page<Pedido> findByValorTotalGreaterThan(BigDecimal valor, Pageable pageable);
 
     List<Pedido> findByDataPedidoBetweenAndStatus(LocalDateTime dataInicio, LocalDateTime dataFim, String status);
+
+    // ATIVIDADE 3.4: Corrigido para suportar paginação
+    Page<Pedido> findByDataPedidoBetweenAndStatus(LocalDateTime dataInicio, LocalDateTime dataFim, String status, Pageable pageable);
 }

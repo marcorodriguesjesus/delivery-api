@@ -8,6 +8,8 @@ import com.deliverytech.delivery_api.dto.ProdutoResponseDTO;
 import com.deliverytech.delivery_api.exceptions.EntityNotFoundException;
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -47,15 +49,13 @@ public class ProdutoService {
 
     /**
      * 1.3: Buscar Produtos por Restaurante (Apenas disponíveis)
+     * ATIVIDADE 3.4: Modificado para aceitar Pageable e retornar Page<DTO>
      */
     @Transactional(readOnly = true)
-    public List<ProdutoResponseDTO> buscarProdutosPorRestaurante(Long restauranteId) {
-        // Usando o novo método do repositório
-        List<Produto> produtos = produtoRepository.findByRestauranteIdAndDisponivelTrue(restauranteId);
+    public Page<ProdutoResponseDTO> buscarProdutosPorRestaurante(Long restauranteId, Pageable pageable) {
+        Page<Produto> produtos = produtoRepository.findByRestauranteIdAndDisponivelTrue(restauranteId, pageable);
 
-        return produtos.stream()
-                .map(produto -> modelMapper.map(produto, ProdutoResponseDTO.class))
-                .collect(Collectors.toList());
+        return produtos.map(produto -> modelMapper.map(produto, ProdutoResponseDTO.class));
     }
 
     /**
@@ -109,18 +109,18 @@ public class ProdutoService {
 
     /**
      * 1.3: Buscar Produtos por Categoria
+     * ATIVIDADE 3.4: Modificado para aceitar Pageable e retornar Page<DTO>
      */
     @Transactional(readOnly = true)
-    public List<ProdutoResponseDTO> buscarProdutosPorCategoria(String categoria) {
-        List<Produto> produtos = produtoRepository.findByCategoria(categoria);
+    public Page<ProdutoResponseDTO> buscarProdutosPorCategoria(String categoria, Pageable pageable) {
+        Page<Produto> produtos = produtoRepository.findByCategoria(categoria, pageable);
 
-        return produtos.stream()
-                .map(produto -> modelMapper.map(produto, ProdutoResponseDTO.class))
-                .collect(Collectors.toList());
+        return produtos.map(produto -> modelMapper.map(produto, ProdutoResponseDTO.class));
     }
 
     /**
      * NOVO MÉTODO (ATIVIDADE 1.2): Remover produto
+     * ATIVIDADE 3.1: Modificado para retornar void (para o Controller retornar 204)
      */
     public void removerProduto(Long id) {
         if (!produtoRepository.existsById(id)) {
@@ -131,12 +131,11 @@ public class ProdutoService {
 
     /**
      * NOVO MÉTODO (ATIVIDADE 1.2): Buscar produto por nome
+     * ATIVIDADE 3.4: Modificado para aceitar Pageable e retornar Page<DTO>
      */
     @Transactional(readOnly = true)
-    public List<ProdutoResponseDTO> buscarProdutosPorNome(String nome) {
-        List<Produto> produtos = produtoRepository.findByNomeContainingIgnoreCase(nome);
-        return produtos.stream()
-                .map(produto -> modelMapper.map(produto, ProdutoResponseDTO.class))
-                .collect(Collectors.toList());
+    public Page<ProdutoResponseDTO> buscarProdutosPorNome(String nome, Pageable pageable) {
+        Page<Produto> produtos = produtoRepository.findByNomeContainingIgnoreCase(nome, pageable);
+        return produtos.map(produto -> modelMapper.map(produto, ProdutoResponseDTO.class));
     }
 }
