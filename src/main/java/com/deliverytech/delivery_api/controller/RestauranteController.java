@@ -12,7 +12,8 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.http.CacheControl;
-import org.springframework.http.HttpStatus;
+import com.deliverytech.delivery_api.dto.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
@@ -41,7 +42,13 @@ public class RestauranteController {
      */
     @PostMapping
     @PreAuthorize("hasRole('ADMIN')")
-    @Operation(summary = "Cadastrar um novo restaurante")
+    @Operation(summary = "Cadastrar um novo restaurante", description = "Cria um novo restaurante na plataforma. Requer permissão de ADMIN.")
+    @ApiResponses(value = {
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "201", description = "Restaurante criado com sucesso"),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "400", description = "Dados inválidos"),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "403", description = "Acesso negado (apenas ADMIN)"),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "409", description = "Conflito: Restaurante já existe")
+    })
     public ResponseEntity<ApiResponse<RestauranteResponseDTO>> cadastrar(
             @Valid @RequestBody RestauranteRequestDTO dto) {
 

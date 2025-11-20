@@ -3,7 +3,6 @@ package com.deliverytech.delivery_api.controller;
 import java.math.BigDecimal;
 import java.net.URI;
 import java.time.LocalDateTime;
-import java.util.List;
 
 import com.deliverytech.delivery_api.dto.*;
 import com.deliverytech.delivery_api.entity.Restaurante;
@@ -12,6 +11,7 @@ import com.deliverytech.delivery_api.repository.RestauranteRepository;
 import com.deliverytech.delivery_api.security.SecurityUtils;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -20,7 +20,6 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.format.annotation.DateTimeFormat;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
@@ -31,8 +30,8 @@ import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
 @RestController
 @RequestMapping("/api/pedidos")
-@CrossOrigin(origins = "*") // 3.3: CORS
-@Tag(name = "Pedidos", description = "Endpoints para gerenciamento do ciclo de vida dos pedidos")
+@CrossOrigin(origins = "*")
+@Tag(name = "Pedidos", description = "Fluxo de checkout e acompanhamento de pedidos")
 public class PedidoController {
 
     @Autowired
@@ -44,13 +43,14 @@ public class PedidoController {
     @Autowired
     private SecurityUtils securityUtils;
 
-    /**
-     * 2.4: POST /api/pedidos - Criar pedido
-     * ATIVIDADE 3.1, 3.2, 3.3: Retorna 201 com Location e ApiResponse
-     */
     @PostMapping
-    @PreAuthorize("hasRole('CLIENTE')") // Só cliente cria pedido
-    @Operation(summary = "Criar um novo pedido (transação complexa)")
+    @PreAuthorize("hasRole('CLIENTE')")
+    @Operation(summary = "Criar novo pedido", description = "Registra um pedido contendo múltiplos itens. Valida se produtos pertencem ao restaurante e calcula o total.")
+    @ApiResponses(value = {
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "201", description = "Pedido criado com sucesso"),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "400", description = "Erro de validação (ex: produto de outro restaurante, restaurante fechado)"),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "403", description = "Apenas clientes podem criar pedidos")
+    })
     public ResponseEntity<ApiResponse<PedidoResponseDTO>> criarPedido(
             @Valid @RequestBody PedidoRequestDTO dto) {
 
@@ -62,79 +62,68 @@ public class PedidoController {
         return ResponseEntity.created(location).body(ApiResponse.success(pedido));
     }
 
-    /**
-     * NOVO ENDPOINT (ATIVIDADE 1.3): GET /api/pedidos - Listar com filtros
-     * ATIVIDADE 3.2, 3.4: Adiciona paginação e wrappers
-     */
     @GetMapping
-    @PreAuthorize("hasRole('ADMIN')") // Só ADMIN vê TUDO
-    @Operation(summary = "Listar pedidos com filtros opcionais (paginado)")
+    @PreAuthorize("hasRole('ADMIN')")
+    @Operation(summary = "Listar todos os pedidos (Admin)", description = "Endpoint administrativo para visão geral com filtros.")
     public ResponseEntity<ApiResponse<PagedResponse<PedidoResumoDTO>>> listarPedidos(
             @Parameter(description = "Filtrar por status", example = "PENDENTE")
             @RequestParam(required = false) StatusPedido status,
 
-            @Parameter(description = "Data/Hora inicial (formato ISO: YYYY-MM-DDTHH:MM:SS)", example = "2025-10-01T00:00:00")
+            @Parameter(description = "Início do período (ISO DateTime)", example = "2025-10-01T00:00:00")
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime dataInicio,
 
-            @Parameter(description = "Data/Hora final (formato ISO: YYYY-MM-DDTHH:MM:SS)", example = "2025-10-31T23:59:59")
+            @Parameter(description = "Fim do período (ISO DateTime)", example = "2025-10-31T23:59:59")
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime dataFim,
 
-            @Parameter(description = "Parâmetros de paginação")
+            @Parameter(description = "Paginação")
             @PageableDefault(size = 10, sort = "dataPedido", direction = Sort.Direction.DESC) Pageable pageable) {
 
         Page<PedidoResumoDTO> page = pedidoService.listarPedidos(status, dataInicio, dataFim, pageable);
         return ResponseEntity.ok(ApiResponse.success(new PagedResponse<>(page)));
     }
 
-    /**
-     * 2.4: GET /api/pedidos/{id} - Buscar pedido completo
-     * ATIVIDADE 3.2: Adiciona ApiResponse
-     */
     @GetMapping("/{id}")
     @PreAuthorize("@pedidoService.canAccess(#id)")
-    @Operation(summary = "Buscar um pedido completo pelo ID")
+    @Operation(summary = "Detalhes do pedido", description = "Retorna o pedido completo com itens e dados do cliente/restaurante.")
+    @ApiResponses(value = {
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "Pedido encontrado"),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "403", description = "Você não tem permissão para ver este pedido"),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "404", description = "Pedido não encontrado")
+    })
     public ResponseEntity<ApiResponse<PedidoResponseDTO>> buscarPorId(
-            @Parameter(description = "ID do pedido", example = "501") @PathVariable Long id) {
+            @PathVariable Long id) {
 
         PedidoResponseDTO pedido = pedidoService.buscarPedidoPorId(id);
         return ResponseEntity.ok(ApiResponse.success(pedido));
     }
 
-    /**
-     * 2.4: PATCH /api/pedidos/{id}/status - Atualizar status
-     * ATIVIDADE 3.2: Adiciona ApiResponse
-     */
     @PatchMapping("/{id}/status")
-    @Operation(summary = "Atualizar o status de um pedido")
+    @Operation(summary = "Atualizar status", description = "Avança o status do pedido (ex: PENDENTE -> PREPARANDO).")
+    @ApiResponses(value = {
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "Status atualizado"),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "400", description = "Transição de status inválida (ex: tentar confirmar pedido já cancelado)")
+    })
     public ResponseEntity<ApiResponse<PedidoResponseDTO>> atualizarStatus(
-            @Parameter(description = "ID do pedido") @PathVariable Long id,
-            @Parameter(description = "Novo status do pedido") @RequestParam StatusPedido status) {
+            @PathVariable Long id,
+            @Parameter(description = "Novo status") @RequestParam StatusPedido status) {
 
         PedidoResponseDTO pedido = pedidoService.atualizarStatusPedido(id, status);
         return ResponseEntity.ok(ApiResponse.success(pedido));
     }
 
-    /**
-     * 2.4: DELETE /api/pedidos/{id} - Cancelar pedido
-     * ATIVIDADE 3.1: Modificado para retornar 204 No Content
-     */
     @DeleteMapping("/{id}")
-    @Operation(summary = "Cancelar um pedido (se as regras de negócio permitirem)")
-    public ResponseEntity<Void> cancelarPedido(
-            @Parameter(description = "ID do pedido") @PathVariable Long id) {
-
+    @Operation(summary = "Cancelar pedido", description = "Cancela um pedido se ele ainda não tiver saído para entrega.")
+    @ApiResponses(value = {
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "204", description = "Pedido cancelado com sucesso"),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "400", description = "Não é possível cancelar (já entregue ou saiu para entrega)")
+    })
+    public ResponseEntity<Void> cancelarPedido(@PathVariable Long id) {
         pedidoService.cancelarPedido(id);
-
-        // 3.1: Retorna 204 No Content
         return ResponseEntity.noContent().build();
     }
 
-    /**
-     * 2.4: POST /api/pedidos/calcular - Calcular total sem salvar
-     * ATIVIDADE 3.2: Adiciona ApiResponse
-     */
     @PostMapping("/calcular")
-    @Operation(summary = "Calcular o total de um pedido (sem salvar no banco)")
+    @Operation(summary = "Simular total", description = "Calcula o valor total do pedido (produtos + frete) sem salvar no banco.")
     public ResponseEntity<ApiResponse<BigDecimal>> calcularTotal(@Valid @RequestBody PedidoRequestDTO dto) {
         Restaurante r = restauranteRepository.findById(dto.getRestauranteId())
                 .orElseThrow(() -> new EntityNotFoundException("Restaurante não encontrado"));
@@ -143,65 +132,43 @@ public class PedidoController {
         return ResponseEntity.ok(ApiResponse.success(total));
     }
 
-    /**
-     * NOVO ENDPOINT (ATIVIDADE 1.3): GET /api/pedidos/cliente/{clienteId}
-     * ATIVIDADE 3.2, 3.4: Adiciona paginação e wrappers
-     */
-    @GetMapping("/cliente/{clienteId}")
-    @Operation(summary = "Buscar o histórico de pedidos de um cliente (paginado)")
-    public ResponseEntity<ApiResponse<PagedResponse<PedidoResumoDTO>>> buscarPedidosPorCliente(
-            @Parameter(description = "ID do cliente") @PathVariable Long clienteId,
-            @Parameter(description = "Parâmetros de paginação")
-            @PageableDefault(size = 5, sort = "dataPedido", direction = Sort.Direction.DESC) Pageable pageable) {
-
-        Page<PedidoResumoDTO> page = pedidoService.buscarPedidosPorCliente(clienteId, pageable);
-        return ResponseEntity.ok(ApiResponse.success(new PagedResponse<>(page)));
-    }
-
-    /**
-     * NOVO ENDPOINT (ATIVIDADE 1.3): GET /api/pedidos/restaurante/{restauranteId}
-     * ATIVIDADE 3.2, 3.4: Adiciona paginação e wrappers
-     */
-    @GetMapping("/restaurante/{restauranteId}")
-    @Operation(summary = "Buscar os pedidos recebidos por um restaurante (paginado)")
-    public ResponseEntity<ApiResponse<PagedResponse<PedidoResumoDTO>>> buscarPedidosPorRestaurante(
-            @Parameter(description = "ID do restaurante") @PathVariable Long restauranteId,
-            @Parameter(description = "Parâmetros de paginação")
-            @PageableDefault(size = 5, sort = "dataPedido", direction = Sort.Direction.DESC) Pageable pageable) {
-
-        Page<PedidoResumoDTO> page = pedidoService.buscarPedidosPorRestaurante(restauranteId, pageable);
-        return ResponseEntity.ok(ApiResponse.success(new PagedResponse<>(page)));
-    }
-
-    /**
-     * NOVO ENDPOINT SEGURO: Meus Pedidos (Cliente)
-     * Não recebe ID na URL, pega do token.
-     */
     @GetMapping("/meus")
     @PreAuthorize("hasRole('CLIENTE')")
-    @Operation(summary = "Listar pedidos do cliente logado")
+    @Operation(summary = "Meus Pedidos (Cliente)", description = "Histórico de pedidos do usuário logado.")
     public ResponseEntity<ApiResponse<PagedResponse<PedidoResumoDTO>>> meusPedidos(
             @PageableDefault(size = 10, sort = "dataPedido", direction = Sort.Direction.DESC) Pageable pageable) {
 
-        Long clienteId = securityUtils.getCurrentUserId(); // ID do token! (Na verdade, usuário ID. Se Cliente ID != Usuario ID na sua modelagem, precisa ajustar aqui. Assumindo 1:1 por enquanto ou que Usuario tem link)
-
-        // Nota: Se sua tabela 'clientes' for separada de 'usuarios', você precisa buscar o Cliente vinculado ao Usuario logado.
-        // Assumindo para este exercício que o ID do Usuario é usado como ID do Cliente nas tabelas ou há um vínculo direto.
-
+        Long clienteId = securityUtils.getCurrentUserId();
         Page<PedidoResumoDTO> page = pedidoService.buscarPedidosPorCliente(clienteId, pageable);
         return ResponseEntity.ok(ApiResponse.success(new PagedResponse<>(page)));
     }
 
-    /**
-     * NOVO ENDPOINT SEGURO: Pedidos do Meu Restaurante
-     */
-    @GetMapping("/recebidos") // '/restaurante' pode confundir com filtro público
+    @GetMapping("/recebidos")
     @PreAuthorize("hasRole('RESTAURANTE')")
-    @Operation(summary = "Listar pedidos recebidos pelo restaurante logado")
+    @Operation(summary = "Pedidos Recebidos (Restaurante)", description = "Fila de pedidos do restaurante logado.")
     public ResponseEntity<ApiResponse<PagedResponse<PedidoResumoDTO>>> pedidosDoRestaurante(
             @PageableDefault(size = 10, sort = "dataPedido", direction = Sort.Direction.DESC) Pageable pageable) {
 
         Long restauranteId = securityUtils.getCurrentRestauranteId();
+        Page<PedidoResumoDTO> page = pedidoService.buscarPedidosPorRestaurante(restauranteId, pageable);
+        return ResponseEntity.ok(ApiResponse.success(new PagedResponse<>(page)));
+    }
+
+    // Endpoints legados mantidos para compatibilidade, mas documentados
+    @GetMapping("/cliente/{clienteId}")
+    @Operation(summary = "Histórico por Cliente ID", description = "Busca administrativa de pedidos de um cliente específico.")
+    public ResponseEntity<ApiResponse<PagedResponse<PedidoResumoDTO>>> buscarPedidosPorCliente(
+            @PathVariable Long clienteId,
+            @PageableDefault(size = 5, sort = "dataPedido", direction = Sort.Direction.DESC) Pageable pageable) {
+        Page<PedidoResumoDTO> page = pedidoService.buscarPedidosPorCliente(clienteId, pageable);
+        return ResponseEntity.ok(ApiResponse.success(new PagedResponse<>(page)));
+    }
+
+    @GetMapping("/restaurante/{restauranteId}")
+    @Operation(summary = "Histórico por Restaurante ID", description = "Busca administrativa de pedidos de um restaurante específico.")
+    public ResponseEntity<ApiResponse<PagedResponse<PedidoResumoDTO>>> buscarPedidosPorRestaurante(
+            @PathVariable Long restauranteId,
+            @PageableDefault(size = 5, sort = "dataPedido", direction = Sort.Direction.DESC) Pageable pageable) {
         Page<PedidoResumoDTO> page = pedidoService.buscarPedidosPorRestaurante(restauranteId, pageable);
         return ResponseEntity.ok(ApiResponse.success(new PagedResponse<>(page)));
     }

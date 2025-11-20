@@ -29,19 +29,30 @@ public class SecurityConfig {
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         return http
                 .csrf(AbstractHttpConfigurer::disable)
-                .cors(cors -> {})
+                .cors(cors -> {}) // Se precisar configurar CORS, faça aqui
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(authorize -> authorize
-                        // Endpoints Públicos
+                        // Endpoints de Autenticação
                         .requestMatchers(HttpMethod.POST, "/api/auth/login", "/api/auth/register").permitAll()
+
+                        // Endpoints Públicos (Leitura)
                         .requestMatchers(HttpMethod.GET, "/api/restaurantes/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/produtos/**").permitAll()
-                        .requestMatchers(HttpMethod.GET, "/actuator/health", "/health", "/info").permitAll()
-                        .requestMatchers("/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html").permitAll()
-                        // Todos os outros
+
+                        // Actuator (Health check)
+                        .requestMatchers(HttpMethod.GET, "/actuator/**", "/health", "/info").permitAll()
+
+                        // SWAGGER / OPENAPI (Adicione estas linhas)
+                        .requestMatchers(
+                                "/v3/api-docs/**",
+                                "/swagger-ui/**",
+                                "/swagger-ui.html",
+                                "/api-docs/**" // <--- Necessário devido à mudança no application.properties
+                        ).permitAll()
+
+                        // Todos os outros exigem autenticação
                         .anyRequest().authenticated()
                 )
-                // ADICIONAR FILTRO AQUI (2.2)
                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
                 .build();
     }
