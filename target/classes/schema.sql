@@ -42,3 +42,15 @@ CREATE TABLE pedidos (
     FOREIGN KEY (cliente_id) REFERENCES clientes(id),
     FOREIGN KEY (restaurante_id) REFERENCES restaurantes(id)
 );
+
+CREATE TABLE usuarios (
+                          id INT AUTO_INCREMENT PRIMARY KEY,
+                          email VARCHAR(100) NOT NULL UNIQUE,
+                          senha VARCHAR(255) NOT NULL,
+                          nome VARCHAR(100) NOT NULL,
+                          role VARCHAR(20) NOT NULL,
+                          ativo BOOLEAN,
+                          data_criacao TIMESTAMP,
+                          restaurante_id INT,
+                          FOREIGN KEY (restaurante_id) REFERENCES restaurantes(id)
+);
