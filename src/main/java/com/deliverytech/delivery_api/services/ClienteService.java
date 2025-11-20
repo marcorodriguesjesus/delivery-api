@@ -1,12 +1,10 @@
 package com.deliverytech.delivery_api.services;
 
 import java.time.LocalDateTime;
-import java.util.List;
-import java.util.stream.Collectors;
-
 import com.deliverytech.delivery_api.dto.ClienteResponseDTO;
 import com.deliverytech.delivery_api.dto.ClienteResquestDTO;
 import com.deliverytech.delivery_api.exceptions.BusinessException;
+import com.deliverytech.delivery_api.exceptions.ConflictException; // IMPORTAR
 import com.deliverytech.delivery_api.exceptions.EntityNotFoundException;
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -28,26 +26,20 @@ public class ClienteService {
     @Autowired
     private ModelMapper modelMapper;
 
-    /**
-     * 1.1: Cadastrar Cliente (Validar email único)
-     */
     public ClienteResponseDTO cadastrarCliente(ClienteResquestDTO dto) {
         if (clienteRepository.existsByEmail(dto.getEmail())) {
-            throw new BusinessException("Email já cadastrado: " + dto.getEmail());
+            // ATIVIDADE 2.2: Lançar 409 Conflict em vez de 400
+            throw new ConflictException("Email já cadastrado: " + dto.getEmail());
         }
 
         Cliente cliente = modelMapper.map(dto, Cliente.class);
         cliente.setAtivo(true);
         cliente.setDataCadastro(LocalDateTime.now());
-
         Cliente clienteSalvo = clienteRepository.save(cliente);
-
         return modelMapper.map(clienteSalvo, ClienteResponseDTO.class);
     }
 
-    /**
-     * 1.1: Buscar Cliente por ID (Tratamento de não encontrado)
-     */
+    // ... (restante do método buscarClientePorId) ...
     @Transactional(readOnly = true)
     public ClienteResponseDTO buscarClientePorId(Long id) {
         Cliente cliente = clienteRepository.findById(id)
@@ -56,9 +48,7 @@ public class ClienteService {
         return modelMapper.map(cliente, ClienteResponseDTO.class);
     }
 
-    /**
-     * 1.1: Buscar Cliente por Email
-     */
+    // ... (restante do método buscarClientePorEmail) ...
     @Transactional(readOnly = true)
     public ClienteResponseDTO buscarClientePorEmail(String email) {
         Cliente cliente = clienteRepository.findByEmail(email)
@@ -67,50 +57,35 @@ public class ClienteService {
         return modelMapper.map(cliente, ClienteResponseDTO.class);
     }
 
-    /**
-     * 1.1: Listar Clientes Ativos
-     * ATIVIDADE 3.4: Modificado para aceitar Pageable e retornar Page<DTO>
-     */
+    // ... (restante do método listarClientesAtivos) ...
     @Transactional(readOnly = true)
     public Page<ClienteResponseDTO> listarClientesAtivos(Pageable pageable) {
-        // 1. Busca paginada do repositório
         Page<Cliente> clientesAtivosPage = clienteRepository.findByAtivoTrue(pageable);
-
-        // 2. Converte a Page<Entidade> para Page<DTO> usando o .map() do Page
         return clientesAtivosPage
                 .map(cliente -> modelMapper.map(cliente, ClienteResponseDTO.class));
     }
 
-    /**
-     * 1.1: Atualizar Cliente
-     */
     public ClienteResponseDTO atualizarCliente(Long id, ClienteResquestDTO dto) {
         Cliente cliente = clienteRepository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException("Cliente não encontrado com ID: " + id));
 
-        // Validar email único (se o email mudou)
         if (!cliente.getEmail().equals(dto.getEmail()) && clienteRepository.existsByEmail(dto.getEmail())) {
-            throw new BusinessException("Email já cadastrado: " + dto.getEmail());
+            // ATIVIDADE 2.2: Lançar 409 Conflict em vez de 400
+            throw new ConflictException("Email já cadastrado: " + dto.getEmail());
         }
 
-        modelMapper.map(dto, cliente); // Atualiza os campos do cliente existente
-
+        modelMapper.map(dto, cliente);
         Cliente clienteAtualizado = clienteRepository.save(cliente);
-
         return modelMapper.map(clienteAtualizado, ClienteResponseDTO.class);
     }
 
-    /**
-     * 1.1: Ativar/Desativar Cliente (Toggle)
-     */
+    // ... (restante do método ativarDesativarCliente) ...
     public ClienteResponseDTO ativarDesativarCliente(Long id) {
         Cliente cliente = clienteRepository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException("Cliente não encontrado com ID: " + id));
 
-        cliente.setAtivo(!cliente.getAtivo()); // Lógica do Toggle
-
+        cliente.setAtivo(!cliente.getAtivo());
         Cliente clienteSalvo = clienteRepository.save(cliente);
-
         return modelMapper.map(clienteSalvo, ClienteResponseDTO.class);
     }
 }
