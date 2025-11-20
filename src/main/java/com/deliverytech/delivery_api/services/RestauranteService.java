@@ -3,9 +3,11 @@ package com.deliverytech.delivery_api.services;
 import java.math.BigDecimal;
 import com.deliverytech.delivery_api.dto.RestauranteRequestDTO;
 import com.deliverytech.delivery_api.dto.RestauranteResponseDTO;
+import com.deliverytech.delivery_api.entity.Usuario;
 import com.deliverytech.delivery_api.exceptions.BusinessException;
 import com.deliverytech.delivery_api.exceptions.ConflictException; // IMPORTAR
 import com.deliverytech.delivery_api.exceptions.EntityNotFoundException;
+import com.deliverytech.delivery_api.security.SecurityUtils;
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
@@ -25,6 +27,9 @@ public class RestauranteService {
 
     @Autowired
     private ModelMapper modelMapper;
+
+    @Autowired
+    private SecurityUtils securityUtils;
 
     public RestauranteResponseDTO cadastrarRestaurante(RestauranteRequestDTO dto) {
         if (restauranteRepository.findByNome(dto.getNome()).isPresent()) {
@@ -114,5 +119,19 @@ public class RestauranteService {
     public Page<RestauranteResponseDTO> buscarRestaurantesProximos(String cep, Pageable pageable) {
         Page<Restaurante> restaurantes = restauranteRepository.findByAtivoTrue(pageable);
         return restaurantes.map(restaurante -> modelMapper.map(restaurante, RestauranteResponseDTO.class));
+    }
+
+    /**
+     * ATIVIDADE 4.2: Verifica se o usuário logado é dono deste restaurante.
+     * Chamado via SpEL no @PreAuthorize.
+     */
+    public boolean isOwner(Long restauranteId) {
+        try {
+            Usuario user = securityUtils.getCurrentUser();
+            // Verifica se o usuário tem ID de restaurante e se bate com o ID solicitado
+            return user.getRestauranteId() != null && user.getRestauranteId().equals(restauranteId);
+        } catch (Exception e) {
+            return false;
+        }
     }
 }

@@ -9,6 +9,7 @@ import com.deliverytech.delivery_api.dto.*;
 import com.deliverytech.delivery_api.entity.Restaurante;
 import com.deliverytech.delivery_api.exceptions.EntityNotFoundException;
 import com.deliverytech.delivery_api.repository.RestauranteRepository;
+import com.deliverytech.delivery_api.security.SecurityUtils;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -21,6 +22,7 @@ import org.springframework.data.web.PageableDefault;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import com.deliverytech.delivery_api.enums.StatusPedido;
@@ -39,11 +41,15 @@ public class PedidoController {
     @Autowired
     private RestauranteRepository restauranteRepository;
 
+    @Autowired
+    private SecurityUtils securityUtils;
+
     /**
      * 2.4: POST /api/pedidos - Criar pedido
      * ATIVIDADE 3.1, 3.2, 3.3: Retorna 201 com Location e ApiResponse
      */
     @PostMapping
+    @PreAuthorize("hasRole('CLIENTE')") // Só cliente cria pedido
     @Operation(summary = "Criar um novo pedido (transação complexa)")
     public ResponseEntity<ApiResponse<PedidoResponseDTO>> criarPedido(
             @Valid @RequestBody PedidoRequestDTO dto) {
@@ -61,6 +67,7 @@ public class PedidoController {
      * ATIVIDADE 3.2, 3.4: Adiciona paginação e wrappers
      */
     @GetMapping
+    @PreAuthorize("hasRole('ADMIN')") // Só ADMIN vê TUDO
     @Operation(summary = "Listar pedidos com filtros opcionais (paginado)")
     public ResponseEntity<ApiResponse<PagedResponse<PedidoResumoDTO>>> listarPedidos(
             @Parameter(description = "Filtrar por status", example = "PENDENTE")
@@ -84,6 +91,7 @@ public class PedidoController {
      * ATIVIDADE 3.2: Adiciona ApiResponse
      */
     @GetMapping("/{id}")
+    @PreAuthorize("@pedidoService.canAccess(#id)")
     @Operation(summary = "Buscar um pedido completo pelo ID")
     public ResponseEntity<ApiResponse<PedidoResponseDTO>> buscarPorId(
             @Parameter(description = "ID do pedido", example = "501") @PathVariable Long id) {
@@ -161,6 +169,39 @@ public class PedidoController {
             @Parameter(description = "Parâmetros de paginação")
             @PageableDefault(size = 5, sort = "dataPedido", direction = Sort.Direction.DESC) Pageable pageable) {
 
+        Page<PedidoResumoDTO> page = pedidoService.buscarPedidosPorRestaurante(restauranteId, pageable);
+        return ResponseEntity.ok(ApiResponse.success(new PagedResponse<>(page)));
+    }
+
+    /**
+     * NOVO ENDPOINT SEGURO: Meus Pedidos (Cliente)
+     * Não recebe ID na URL, pega do token.
+     */
+    @GetMapping("/meus")
+    @PreAuthorize("hasRole('CLIENTE')")
+    @Operation(summary = "Listar pedidos do cliente logado")
+    public ResponseEntity<ApiResponse<PagedResponse<PedidoResumoDTO>>> meusPedidos(
+            @PageableDefault(size = 10, sort = "dataPedido", direction = Sort.Direction.DESC) Pageable pageable) {
+
+        Long clienteId = securityUtils.getCurrentUserId(); // ID do token! (Na verdade, usuário ID. Se Cliente ID != Usuario ID na sua modelagem, precisa ajustar aqui. Assumindo 1:1 por enquanto ou que Usuario tem link)
+
+        // Nota: Se sua tabela 'clientes' for separada de 'usuarios', você precisa buscar o Cliente vinculado ao Usuario logado.
+        // Assumindo para este exercício que o ID do Usuario é usado como ID do Cliente nas tabelas ou há um vínculo direto.
+
+        Page<PedidoResumoDTO> page = pedidoService.buscarPedidosPorCliente(clienteId, pageable);
+        return ResponseEntity.ok(ApiResponse.success(new PagedResponse<>(page)));
+    }
+
+    /**
+     * NOVO ENDPOINT SEGURO: Pedidos do Meu Restaurante
+     */
+    @GetMapping("/recebidos") // '/restaurante' pode confundir com filtro público
+    @PreAuthorize("hasRole('RESTAURANTE')")
+    @Operation(summary = "Listar pedidos recebidos pelo restaurante logado")
+    public ResponseEntity<ApiResponse<PagedResponse<PedidoResumoDTO>>> pedidosDoRestaurante(
+            @PageableDefault(size = 10, sort = "dataPedido", direction = Sort.Direction.DESC) Pageable pageable) {
+
+        Long restauranteId = securityUtils.getCurrentRestauranteId();
         Page<PedidoResumoDTO> page = pedidoService.buscarPedidosPorRestaurante(restauranteId, pageable);
         return ResponseEntity.ok(ApiResponse.success(new PagedResponse<>(page)));
     }

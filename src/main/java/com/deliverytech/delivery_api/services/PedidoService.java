@@ -7,9 +7,11 @@ import java.util.UUID;
 import java.util.stream.Collectors;
 
 import com.deliverytech.delivery_api.dto.*;
-import com.deliverytech.delivery_api.entity.Produto;
+import com.deliverytech.delivery_api.entity.*;
+import com.deliverytech.delivery_api.enums.Role;
 import com.deliverytech.delivery_api.exceptions.BusinessException;
 import com.deliverytech.delivery_api.exceptions.EntityNotFoundException;
+import com.deliverytech.delivery_api.security.SecurityUtils;
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
@@ -17,9 +19,6 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import com.deliverytech.delivery_api.entity.Cliente;
-import com.deliverytech.delivery_api.entity.Pedido;
-import com.deliverytech.delivery_api.entity.Restaurante;
 import com.deliverytech.delivery_api.enums.StatusPedido;
 import com.deliverytech.delivery_api.repository.ClienteRepository;
 import com.deliverytech.delivery_api.repository.PedidoRepository;
@@ -40,6 +39,8 @@ public class PedidoService {
     private ProdutoRepository produtoRepository;
     @Autowired
     private ModelMapper modelMapper;
+    @Autowired
+    private SecurityUtils securityUtils;
 
     /**
      * 1.4: Criar Pedido (Transação Complexa)
@@ -245,5 +246,21 @@ public class PedidoService {
         }
         response.setItens(itens); // Itens vêm do DTO de request ou são nulos na busca
         return response;
+    }
+
+    public boolean canAccess(Long pedidoId) {
+        try {
+            Usuario user = securityUtils.getCurrentUser();
+            Pedido pedido = pedidoRepository.findById(pedidoId).orElse(null);
+            if (pedido == null) return false;
+
+            if (user.getRole() == Role.ADMIN) return true;
+            if (user.getRole() == Role.CLIENTE) return user.getId().equals(pedido.getClienteId());
+            if (user.getRole() == Role.RESTAURANTE) return user.getRestauranteId().equals(pedido.getRestaurante().getId());
+
+            return false;
+        } catch (Exception e) {
+            return false;
+        }
     }
 }

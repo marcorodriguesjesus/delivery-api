@@ -14,6 +14,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import com.deliverytech.delivery_api.services.ProdutoService;
@@ -36,6 +37,7 @@ public class ProdutoController {
      * ATIVIDADE 3.1, 3.2, 3.3: Retorna 201 com Location e ApiResponse
      */
     @PostMapping
+    @PreAuthorize("hasRole('ADMIN') or hasRole('RESTAURANTE')")
     @Operation(summary = "Cadastrar um novo produto (item de cardápio)")
     public ResponseEntity<ApiResponse<ProdutoResponseDTO>> cadastrar(
             @Valid @RequestBody ProdutoRequestDTO dto) {
@@ -96,6 +98,7 @@ public class ProdutoController {
      * ATIVIDADE 3.2: Adiciona ApiResponse
      */
     @PutMapping("/{id}")
+    @PreAuthorize("hasRole('ADMIN') or (hasRole('RESTAURANTE') and @produtoService.isOwner(#id))")
     @Operation(summary = "Atualizar os dados de um produto")
     public ResponseEntity<ApiResponse<ProdutoResponseDTO>> atualizar(
             @Parameter(description = "ID do produto") @PathVariable Long id,
@@ -110,6 +113,7 @@ public class ProdutoController {
      * ATIVIDADE 3.2: Adiciona ApiResponse
      */
     @PatchMapping("/{id}/disponibilidade")
+    @PreAuthorize("hasRole('ADMIN') or (hasRole('RESTAURANTE') and @produtoService.isOwner(#id))")
     @Operation(summary = "Ativar ou desativar a disponibilidade de um produto")
     public ResponseEntity<ApiResponse<ProdutoResponseDTO>> alterarDisponibilidade(
             @Parameter(description = "ID do produto") @PathVariable Long id,
@@ -124,6 +128,7 @@ public class ProdutoController {
      * ATIVIDADE 3.1: Modificado para retornar 204 No Content
      */
     @DeleteMapping("/{id}")
+    @PreAuthorize("hasRole('ADMIN') or @produtoService.isOwner(#id)")
     @Operation(summary = "Remover um produto (exclusão física)")
     public ResponseEntity<Void> remover(
             @Parameter(description = "ID do produto") @PathVariable Long id) {

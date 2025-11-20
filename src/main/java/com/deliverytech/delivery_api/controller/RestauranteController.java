@@ -14,6 +14,7 @@ import org.springframework.data.web.PageableDefault;
 import org.springframework.http.CacheControl;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
@@ -39,6 +40,7 @@ public class RestauranteController {
      * ATIVIDADE 3.1, 3.2, 3.3: Retorna 201 com Location e ApiResponse
      */
     @PostMapping
+    @PreAuthorize("hasRole('ADMIN')")
     @Operation(summary = "Cadastrar um novo restaurante")
     public ResponseEntity<ApiResponse<RestauranteResponseDTO>> cadastrar(
             @Valid @RequestBody RestauranteRequestDTO dto) {
@@ -103,6 +105,7 @@ public class RestauranteController {
      * ATIVIDADE 3.2: Adiciona ApiResponse
      */
     @PutMapping("/{id}")
+    @PreAuthorize("hasRole('ADMIN') or (hasRole('RESTAURANTE') and @restauranteService.isOwner(#id))")
     @Operation(summary = "Atualizar os dados de um restaurante")
     public ResponseEntity<ApiResponse<RestauranteResponseDTO>> atualizar(
             @Parameter(description = "ID do restaurante") @PathVariable Long id,
@@ -117,6 +120,7 @@ public class RestauranteController {
      * ATIVIDADE 3.2: Adiciona ApiResponse
      */
     @PatchMapping("/{id}/status")
+    @PreAuthorize("hasRole('ADMIN')")
     @Operation(summary = "Ativar ou desativar um restaurante (toggle)")
     public ResponseEntity<ApiResponse<RestauranteResponseDTO>> ativarDesativar(
             @Parameter(description = "ID do restaurante") @PathVariable Long id) {

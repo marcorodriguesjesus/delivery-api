@@ -5,7 +5,9 @@ import java.util.stream.Collectors;
 
 import com.deliverytech.delivery_api.dto.ProdutoRequestDTO;
 import com.deliverytech.delivery_api.dto.ProdutoResponseDTO;
+import com.deliverytech.delivery_api.entity.Usuario;
 import com.deliverytech.delivery_api.exceptions.EntityNotFoundException;
+import com.deliverytech.delivery_api.security.SecurityUtils;
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
@@ -29,6 +31,9 @@ public class ProdutoService {
 
     @Autowired
     private ModelMapper modelMapper;
+
+    @Autowired
+    private SecurityUtils securityUtils;
 
     /**
      * 1.3: Cadastrar Produto (Validar restaurante existe)
@@ -137,5 +142,20 @@ public class ProdutoService {
     public Page<ProdutoResponseDTO> buscarProdutosPorNome(String nome, Pageable pageable) {
         Page<Produto> produtos = produtoRepository.findByNomeContainingIgnoreCase(nome, pageable);
         return produtos.map(produto -> modelMapper.map(produto, ProdutoResponseDTO.class));
+    }
+
+    public boolean isOwner(Long produtoId) {
+        try {
+            Produto produto = produtoRepository.findById(produtoId).orElse(null);
+            if (produto == null) return false;
+
+            Usuario user = securityUtils.getCurrentUser();
+
+            // O usuário é dono se seu restauranteId for igual ao restauranteId do produto
+            return user.getRestauranteId() != null
+                    && user.getRestauranteId().equals(produto.getRestauranteId());
+        } catch (Exception e) {
+            return false;
+        }
     }
 }
