@@ -7,9 +7,11 @@ Sistema de delivery desenvolvido com Spring Boot & Java 21.
 - Spring Boot 3.3.6
 - Spring Web
 - Spring Data JPA
-- MariaDB
+- MySQL (produção)
+- H2 Database (Testes)
 - Maven
 - **SpringDoc OpenAPI (Swagger UI)**
+- **JUnit 5 & Mockito (Testes)**
 
 ## ⚡ Recursos Modernos Utilizados
 - Records (Java 14+)
@@ -20,8 +22,14 @@ Sistema de delivery desenvolvido com Spring Boot & Java 21.
 ## 🏃‍♂️ Como Executar
 1. **Requisitos:** JDK 21 instalado
 2. Clone o repositório
-3. Execute: `./mvnw spring-boot:run`
-4. **Acessar Documentação:** http://localhost:8080/swagger-ui.html
+3. Configure o banco de dados no `application.properties` (se necessário)
+4. Execute: `./mvnw spring-boot:run`
+5. **Acessar Documentação:** http://localhost:8080/swagger-ui.html
+
+## 🧪 Como Rodar Os Testes
+```bash
+./mvnw test
+```
 
 ## 📖 Documentação da API (Swagger)
 A API está totalmente documentada utilizando OpenAPI 3.0.
@@ -46,8 +54,9 @@ Alguns endpoints requerem um Token JWT. Siga os passos abaixo para testar:
 
 ## 🔧 Configuração
 - Porta: 8080
-- Banco de Dados: MySQL (Local ou Docker)
-- Perfil: development
+- Banco de Dados: MySQL
+- Perfil de Desenvolvedor: MySQL (Docker ou Local)
+- Perfil de Testes: H2
 
 ## 👨‍💻 Desenvolvedor
 [Marco Jesus]

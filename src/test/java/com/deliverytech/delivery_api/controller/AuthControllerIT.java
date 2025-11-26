@@ -4,9 +4,13 @@ import com.deliverytech.delivery_api.BaseIntegrationTest;
 import com.deliverytech.delivery_api.dto.LoginRequest;
 import com.deliverytech.delivery_api.dto.RegisterRequest;
 import com.deliverytech.delivery_api.enums.Role;
+import com.deliverytech.delivery_api.repository.UsuarioRepository; // Importar
+import org.junit.jupiter.api.BeforeEach; // Importar
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired; // Importar
 import org.springframework.http.MediaType;
+import org.springframework.security.crypto.password.PasswordEncoder; // Importar
 
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -14,7 +18,18 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 public class AuthControllerIT extends BaseIntegrationTest {
 
-    // CENÁRIO 1: REGISTRO DE USUÁRIO
+    @Autowired
+    private UsuarioRepository usuarioRepository;
+
+    @Autowired
+    private PasswordEncoder passwordEncoder;
+
+    // Limpar o banco antes de cada teste para evitar conflito de email único
+    @BeforeEach
+    void setUp() {
+        usuarioRepository.deleteAll();
+    }
+
     @Test
     @DisplayName("Deve registrar um novo usuário com sucesso (201 Created)")
     void testRegistrarUsuario_Success() throws Exception {
@@ -32,13 +47,24 @@ public class AuthControllerIT extends BaseIntegrationTest {
                 .andExpect(jsonPath("$.data.email").value("novo.teste@email.com"));
     }
 
-    // CENÁRIO 2: LOGIN VÁLIDO
     @Test
     @DisplayName("Deve realizar login com credenciais válidas e retornar token (200 OK)")
     void testLogin_Success() throws Exception {
-        // Usuário criado no data.sql (joao@email.com / 123456)
+        // 1. PRIMEIRO: Cria o usuário via API de registro (garante hash correta)
+        RegisterRequest registro = new RegisterRequest();
+        registro.setNome("Joao Login");
+        registro.setEmail("joao.login@email.com");
+        registro.setSenha("123456");
+        registro.setRole(Role.CLIENTE);
+
+        mockMvc.perform(post("/api/auth/register")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(registro)))
+                .andExpect(status().isCreated());
+
+        // 2. DEPOIS: Tenta logar com ele
         LoginRequest login = new LoginRequest();
-        login.setEmail("joao@email.com");
+        login.setEmail("joao.login@email.com");
         login.setSenha("123456");
 
         mockMvc.perform(post("/api/auth/login")
@@ -46,23 +72,34 @@ public class AuthControllerIT extends BaseIntegrationTest {
                         .content(objectMapper.writeValueAsString(login)))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.success").value(true))
-                .andExpect(jsonPath("$.data.token").isNotEmpty()) // Token deve estar presente
-                .andExpect(jsonPath("$.data.user.email").value("joao@email.com"));
+                .andExpect(jsonPath("$.data.token").isNotEmpty())
+                .andExpect(jsonPath("$.data.user.email").value("joao.login@email.com"));
     }
 
-    // CENÁRIO 3: LOGIN INVÁLIDO
     @Test
-    @DisplayName("Deve falhar login com senha incorreta (401/403 ou 400)")
+    @DisplayName("Deve falhar login com senha incorreta (401 ou 400)")
     void testLogin_InvalidCredentials() throws Exception {
+        // Cria usuário válido
+        RegisterRequest registro = new RegisterRequest();
+        registro.setNome("Joao Erro");
+        registro.setEmail("joao.erro@email.com");
+        registro.setSenha("123456");
+        registro.setRole(Role.CLIENTE);
+
+        mockMvc.perform(post("/api/auth/register")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(registro)))
+                .andExpect(status().isCreated());
+
+        // Tenta logar com senha errada
         LoginRequest login = new LoginRequest();
-        login.setEmail("joao@email.com");
-        login.setSenha("senhaerrada"); // Senha errada
+        login.setEmail("joao.erro@email.com");
+        login.setSenha("senhaerrada");
 
         mockMvc.perform(post("/api/auth/login")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(login)))
-                // Dependendo de como sua ExceptionHandler trata BadCredentialsException, pode ser 400 ou 401
-                // Baseado no seu AuthController, ele lança BusinessException que vira 400 Bad Request
+                // Seu AuthController lança BusinessException, que o Handler mapeia para 400 Bad Request
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.success").value(false));
     }

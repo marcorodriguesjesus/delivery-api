@@ -6,6 +6,8 @@ import com.deliverytech.delivery_api.dto.FieldValidationError;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.AccessDeniedException; // Importante
+import org.springframework.security.authorization.AuthorizationDeniedException; // Importante
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -16,6 +18,22 @@ import java.util.stream.Collectors;
 
 @RestControllerAdvice
 public class GlobalExceptionHandler {
+
+    /**
+     * Handler para Acesso Negado (403)
+     * Captura exceções lançadas pelo @PreAuthorize ou outras regras de segurança.
+     */
+    @ExceptionHandler({AccessDeniedException.class, AuthorizationDeniedException.class})
+    public ResponseEntity<ApiResponse<Object>> handleAccessDeniedException(
+            Exception ex, HttpServletRequest request) {
+
+        ApiError error = new ApiError(
+                HttpStatus.FORBIDDEN,
+                "Acesso negado: Você não tem permissão para realizar esta ação.",
+                request.getRequestURI()
+        );
+        return ResponseEntity.status(HttpStatus.FORBIDDEN).body(ApiResponse.error(error));
+    }
 
     /**
      * ATIVIDADE 3.1 e 3.2: Handler para Entidade Não Encontrada (404)
@@ -49,7 +67,6 @@ public class GlobalExceptionHandler {
 
     /**
      * NOVO HANDLER (ATIVIDADE 2.2): Handler para Conflito de Dados (409)
-     * Trata a nova ConflictException.
      */
     @ExceptionHandler(ConflictException.class)
     public ResponseEntity<ApiResponse<Object>> handleConflictException(
@@ -62,7 +79,6 @@ public class GlobalExceptionHandler {
         );
         return ResponseEntity.status(HttpStatus.CONFLICT).body(ApiResponse.error(error));
     }
-
 
     /**
      * ATIVIDADE 3.1 e 3.2: Handler para Erros de Validação (400)
@@ -95,7 +111,7 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ApiResponse<Object>> handleGenericException(
             Exception ex, HttpServletRequest request) {
 
-        ex.printStackTrace();
+        ex.printStackTrace(); // Log do erro no console para debug
 
         ApiError error = new ApiError(
                 HttpStatus.INTERNAL_SERVER_ERROR,

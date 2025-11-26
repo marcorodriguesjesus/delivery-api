@@ -5,6 +5,7 @@ import com.deliverytech.delivery_api.dto.ProdutoRequestDTO;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.MediaType;
+import org.springframework.security.test.context.support.WithMockUser; // Importação Necessária
 
 import java.math.BigDecimal;
 
@@ -19,6 +20,7 @@ public class ProdutoControllerIT extends BaseIntegrationTest {
 
     @Test
     @DisplayName("Cenário 4.1: Deve criar, buscar, atualizar e deletar um produto (CRUD)")
+    @WithMockUser(roles = "ADMIN") // <--- ADICIONADO: Simula um ADMIN logado
     void testProdutoCRUD() throws Exception {
 
         // --- 1. CREATE (POST) ---
@@ -40,6 +42,8 @@ public class ProdutoControllerIT extends BaseIntegrationTest {
         Integer produtoId = com.jayway.jsonpath.JsonPath.read(responseJson, "$.data.id");
 
         // --- 2. READ (GET) ---
+        // GET pode ser público ou protegido dependendo da sua config.
+        // Se for protegido, o @WithMockUser lá em cima já cobre.
         mockMvc.perform(get("/api/produtos/" + produtoId))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.success").value(true))

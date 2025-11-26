@@ -28,7 +28,7 @@ public class Usuario implements UserDetails {
     private String email;
 
     @Column(nullable = false)
-    private String senha; // Será armazenado o hash BCrypt
+    private String senha;
 
     @Column(nullable = false)
     private String nome;
@@ -42,7 +42,6 @@ public class Usuario implements UserDetails {
     @Column(name = "data_criacao")
     private LocalDateTime dataCriacao;
 
-    // Apenas para usuários com role RESTAURANTE (vincula ao ID do restaurante)
     @Column(name = "restaurante_id")
     private Long restauranteId;
 
@@ -50,9 +49,8 @@ public class Usuario implements UserDetails {
 
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
-        // Converte a Role do usuário em uma Authority do Spring Security
-        // Ex: se role for ADMIN, authority será "ROLE_ADMIN" (padrão comum) ou apenas "ADMIN"
-        return List.of(new SimpleGrantedAuthority(role.name()));
+        // Adiciona o prefixo ROLE_ para que o hasRole('NOME') funcione corretamente
+        return List.of(new SimpleGrantedAuthority("ROLE_" + role.name()));
     }
 
     @Override
@@ -62,7 +60,7 @@ public class Usuario implements UserDetails {
 
     @Override
     public String getUsername() {
-        return this.email; // Usamos o email como "username" para login
+        return this.email;
     }
 
     @Override
@@ -82,7 +80,6 @@ public class Usuario implements UserDetails {
 
     @Override
     public boolean isEnabled() {
-        // O usuário só pode logar se o campo 'ativo' for true
         return this.ativo != null && this.ativo;
     }
 }

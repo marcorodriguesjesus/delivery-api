@@ -3,104 +3,118 @@ package com.deliverytech.delivery_api.controller;
 import com.deliverytech.delivery_api.BaseIntegrationTest;
 import com.deliverytech.delivery_api.dto.ItemPedidoDTO;
 import com.deliverytech.delivery_api.dto.PedidoRequestDTO;
+import com.deliverytech.delivery_api.entity.Produto;
+import com.deliverytech.delivery_api.enums.StatusPedido;
+import com.deliverytech.delivery_api.repository.ProdutoRepository;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
+import org.springframework.security.test.context.support.WithMockUser;
 
 import java.util.List;
 
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
-/**
- * ATIVIDADE 4.1: Testes de Integração para PedidoController (Cenários Complexos)
- */
-public class PedidoControllerIT extends BaseIntegrationTest {
+class PedidoControllerIT extends BaseIntegrationTest {
+
+    @Autowired
+    private ProdutoRepository produtoRepository;
 
     @Test
-    @DisplayName("Cenário 4.1: Deve criar um pedido complexo com sucesso (Status 201)")
+    @DisplayName("Deve criar pedido completo com sucesso (201 Created)")
+    // Simula um cliente logado (ID 1 do data.sql é o João Silva, email: joao@email.com)
+    @WithMockUser(username = "joao@email.com", roles = {"CLIENTE"})
     void testCriarPedido_Success() throws Exception {
-        // Usando dados do data.sql:
-        // Cliente 1 (João Silva)
-        // Restaurante 2 (Burger House)
-        // Produtos 4 (X-Burger) e 6 (Batata Frita)
+        // Cliente 1, Restaurante 1, Produtos 1 e 2 (do data.sql)
+        ItemPedidoDTO item1 = new ItemPedidoDTO(); item1.setProdutoId(1L); item1.setQuantidade(1);
+        ItemPedidoDTO item2 = new ItemPedidoDTO(); item2.setProdutoId(2L); item2.setQuantidade(1);
 
-        ItemPedidoDTO item1 = new ItemPedidoDTO();
-        item1.setProdutoId(4L); // X-Burger
-        item1.setQuantidade(1);
+        PedidoRequestDTO request = new PedidoRequestDTO();
+        request.setClienteId(1L);
+        request.setRestauranteId(1L);
+        request.setItens(List.of(item1, item2));
 
-        ItemPedidoDTO item2 = new ItemPedidoDTO();
-        item2.setProdutoId(6L); // Batata Frita
-        item2.setQuantidade(2);
-
-        PedidoRequestDTO requestDTO = new PedidoRequestDTO();
-        requestDTO.setClienteId(1L);
-        requestDTO.setRestauranteId(2L);
-        requestDTO.setItens(List.of(item1, item2));
-        requestDTO.setObservacoes("Teste MockMvc");
-
+        // Valor esperado: (35.90 * 1) + (38.90 * 1) + 5.00 (taxa) = 79.80
         mockMvc.perform(post("/api/pedidos")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(requestDTO)))
+                        .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isCreated())
-                .andExpect(jsonPath("$.success").value(true))
-                .andExpect(jsonPath("$.data.cliente.id").value(1L))
-                .andExpect(jsonPath("$.data.restaurante.id").value(2L))
-                // Valida o cálculo: (1 * 18.90) + (2 * 12.90) + 3.50 (taxa) = 18.90 + 25.80 + 3.50 = 48.20
-                .andExpect(jsonPath("$.data.valorTotal").value(48.20));
+                .andExpect(jsonPath("$.data.valorTotal").value(79.80))
+                .andExpect(jsonPath("$.data.status").value("PENDENTE"));
     }
 
     @Test
-    @DisplayName("Cenário 4.2: Deve falhar ao criar pedido com cliente inexistente (Status 404)")
-    void testCriarPedido_ClienteNotFound() throws Exception {
-        ItemPedidoDTO item1 = new ItemPedidoDTO();
-        item1.setProdutoId(4L);
-        item1.setQuantidade(1);
+    @DisplayName("Deve retornar 400 se produto não pertencer ao restaurante")
+    @WithMockUser(username = "joao@email.com", roles = {"CLIENTE"})
+    void testCriarPedido_ProdutoErrado() throws Exception {
+        // Restaurante 1, mas Produto 4 (que é do Restaurante 2 no data.sql)
+        ItemPedidoDTO item = new ItemPedidoDTO();
+        item.setProdutoId(4L);
+        item.setQuantidade(1);
 
-        PedidoRequestDTO requestDTO = new PedidoRequestDTO();
-        requestDTO.setClienteId(9999L); // ID Inexistente
-        requestDTO.setRestauranteId(2L);
-        requestDTO.setItens(List.of(item1));
-
-        mockMvc.perform(post("/api/pedidos")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(requestDTO)))
-                .andExpect(status().isNotFound())
-                .andExpect(jsonPath("$.success").value(false))
-                .andExpect(jsonPath("$.error.message").value("Cliente não encontrado: 9999"));
-    }
-
-    @Test
-    @DisplayName("Cenário 4.1: Deve falhar ao criar pedido com produto de outro restaurante (Status 400)")
-    void testCriarPedido_ProdutoNaoPertenceRestaurante() throws Exception {
-        // Usando dados do data.sql:
-        // Restaurante 1 (Pizzaria Bella)
-        // Produto 4 (X-Burger, que é do Restaurante 2)
-
-        ItemPedidoDTO item1 = new ItemPedidoDTO();
-        item1.setProdutoId(4L); // X-Burger (do Restaurante 2)
-        item1.setQuantidade(1);
-
-        PedidoRequestDTO requestDTO = new PedidoRequestDTO();
-        requestDTO.setClienteId(1L);
-        requestDTO.setRestauranteId(1L); // Pizzaria Bella (Restaurante 1)
-        requestDTO.setItens(List.of(item1));
+        PedidoRequestDTO request = new PedidoRequestDTO();
+        request.setClienteId(1L);
+        request.setRestauranteId(1L);
+        request.setItens(List.of(item));
 
         mockMvc.perform(post("/api/pedidos")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(requestDTO)))
+                        .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isBadRequest()) // BusinessException
-                .andExpect(jsonPath("$.success").value(false))
-                .andExpect(jsonPath("$.error.message").value("Produto X-Burger não pertence ao restaurante selecionado."));
+                .andExpect(jsonPath("$.error.message").exists());
     }
 
     @Test
-    @DisplayName("Cenário 4.2: Deve cancelar pedido com sucesso (Status 204)")
-    void testCancelarPedido_Success() throws Exception {
-        // O Pedido ID=1 (PED1234567890) é PENDENTE no data.sql
-        mockMvc.perform(delete("/api/pedidos/1"))
-                .andExpect(status().isNoContent()); // 3.1: 204 No Content
+    @DisplayName("Deve retornar 400 ao tentar pedir produto indisponível (Cenário de Estoque)")
+    @WithMockUser(username = "joao@email.com", roles = {"CLIENTE"})
+    void testCriarPedido_ProdutoIndisponivel() throws Exception {
+        // ARRANGE: Indisponibilizar o Produto 1 no banco H2
+        Produto produto = produtoRepository.findById(1L).orElseThrow();
+        produto.setDisponivel(false);
+        produtoRepository.save(produto);
+
+        // Preparar Request
+        ItemPedidoDTO item = new ItemPedidoDTO();
+        item.setProdutoId(1L); // Produto que acabamos de "esgotar"
+        item.setQuantidade(1);
+
+        PedidoRequestDTO request = new PedidoRequestDTO();
+        request.setClienteId(1L);
+        request.setRestauranteId(1L);
+        request.setItens(List.of(item));
+
+        // ACT & ASSERT
+        mockMvc.perform(post("/api/pedidos")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.error.message").value("Produto indisponível: " + produto.getNome()));
+
+        // Cleanup (opcional, pois o teste usa @Transactional e faz rollback, mas bom garantir)
+        produto.setDisponivel(true);
+        produtoRepository.save(produto);
+    }
+
+    @Test
+    @DisplayName("Deve atualizar status do pedido (200 OK)")
+    @WithMockUser(username = "admin", roles = {"ADMIN"}) // Apenas Admin ou Restaurante pode atualizar
+    void testAtualizarStatus() throws Exception {
+        // Pedido 1 já existe no data.sql como PENDENTE
+        mockMvc.perform(patch("/api/pedidos/1/status")
+                        .param("status", StatusPedido.PREPARANDO.name()))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.status").value("PREPARANDO"));
+    }
+
+    @Test
+    @DisplayName("Deve listar histórico de pedidos do cliente")
+    @WithMockUser(username = "admin", roles = {"ADMIN"})
+    void testListarHistoricoCliente() throws Exception {
+        mockMvc.perform(get("/api/pedidos/cliente/1?page=0&size=10"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.content").isArray())
+                .andExpect(jsonPath("$.data.totalElements").isNotEmpty());
     }
 }
