@@ -1,8 +1,5 @@
 package com.deliverytech.delivery_api.services;
 
-import java.util.List;
-import java.util.stream.Collectors;
-
 import com.deliverytech.delivery_api.dto.ProdutoRequestDTO;
 import com.deliverytech.delivery_api.dto.ProdutoResponseDTO;
 import com.deliverytech.delivery_api.entity.Usuario;
@@ -14,6 +11,8 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.cache.annotation.Cacheable;
+import org.springframework.cache.annotation.CacheEvict;
 
 import com.deliverytech.delivery_api.entity.Produto;
 import com.deliverytech.delivery_api.repository.ProdutoRepository;
@@ -38,6 +37,7 @@ public class ProdutoService {
     /**
      * 1.3: Cadastrar Produto (Validar restaurante existe)
      */
+    @CacheEvict(value = "produtos", allEntries = true)
     public ProdutoResponseDTO cadastrarProduto(ProdutoRequestDTO dto) {
         // Valida se o restaurante existe
         if (!restauranteRepository.existsById(dto.getRestauranteId())) {
@@ -57,6 +57,7 @@ public class ProdutoService {
      * ATIVIDADE 3.4: Modificado para aceitar Pageable e retornar Page<DTO>
      */
     @Transactional(readOnly = true)
+    @Cacheable(value = "produtos", key = "#restauranteId")
     public Page<ProdutoResponseDTO> buscarProdutosPorRestaurante(Long restauranteId, Pageable pageable) {
         Page<Produto> produtos = produtoRepository.findByRestauranteIdAndDisponivelTrue(restauranteId, pageable);
 
@@ -81,6 +82,7 @@ public class ProdutoService {
     /**
      * 1.3: Atualizar Produto
      */
+    @CacheEvict(value = {"produtos", "produtosCategoria"}, allEntries = true)
     public ProdutoResponseDTO atualizarProduto(Long id, ProdutoRequestDTO dto) {
         Produto produto = produtoRepository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException("Produto não encontrado com ID: " + id));
@@ -101,6 +103,7 @@ public class ProdutoService {
     /**
      * 1.3: Alterar Disponibilidade (Toggle)
      */
+    @CacheEvict(value = {"produtos", "produtosCategoria"}, allEntries = true)
     public ProdutoResponseDTO alterarDisponibilidade(Long id, boolean disponivel) {
         Produto produto = produtoRepository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException("Produto não encontrado com ID: " + id));
@@ -117,6 +120,7 @@ public class ProdutoService {
      * ATIVIDADE 3.4: Modificado para aceitar Pageable e retornar Page<DTO>
      */
     @Transactional(readOnly = true)
+    @Cacheable(value = "produtosCategoria", key = "#categoria")
     public Page<ProdutoResponseDTO> buscarProdutosPorCategoria(String categoria, Pageable pageable) {
         Page<Produto> produtos = produtoRepository.findByCategoria(categoria, pageable);
 

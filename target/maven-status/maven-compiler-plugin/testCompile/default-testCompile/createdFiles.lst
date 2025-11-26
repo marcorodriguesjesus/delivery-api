@@ -1,0 +1,11 @@
+com\deliverytech\delivery_api\BaseIntegrationTest.class
+com\deliverytech\delivery_api\security\SecurityScenariosIT.class
+com\deliverytech\delivery_api\controller\ProdutoControllerIT.class
+com\deliverytech\delivery_api\controller\RestauranteControllerIT.class
+com\deliverytech\delivery_api\ProjetoDeliveryApiApplicationTests.class
+com\deliverytech\delivery_api\services\PedidoServiceTest.class
+com\deliverytech\delivery_api\controller\PedidoControllerIT.class
+com\deliverytech\delivery_api\DeliveryApiApplicationTests.class
+com\deliverytech\delivery_api\controller\ClienteControllerIT.class
+com\deliverytech\delivery_api\services\ClienteServiceTest.class
+com\deliverytech\delivery_api\controller\AuthControllerIT.class

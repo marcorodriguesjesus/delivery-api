@@ -3,10 +3,12 @@ package com.deliverytech.delivery_api.dto;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 import java.math.BigDecimal;
+import java.io.Serializable;
 
 @Data
 @Schema(description = "DTO de resposta com os dados de um produto") // ATIVIDADE 2.3
-public class ProdutoResponseDTO {
+public class ProdutoResponseDTO implements Serializable {
+    private static final long serialVersionUID = 1L;
 
     @Schema(description = "ID único do produto", example = "101") // ATIVIDADE 2.3
     private Long id;

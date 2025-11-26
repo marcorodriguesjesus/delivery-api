@@ -1,0 +1,50 @@
+#version: '3.8'
+
+services:
+  # Aplicacao Java (Spring Boot)
+  app:
+    build: .
+    container_name: delivery-api
+    ports:
+      - "8080:8080"
+    environment:
+      # Configura a conexao para usar o container 'db' em vez de localhost
+      - SPRING_DATASOURCE_URL=jdbc:mysql://db:3306/delivery?allowPublicKeyRetrieval=true&useSSL=false&createDatabaseIfNotExist=true
+      - SPRING_DATASOURCE_USERNAME=root
+      - SPRING_DATASOURCE_PASSWORD=teste
+      # Garante que o Hibernate atualize o banco automaticamente
+      - SPRING_JPA_HIBERNATE_DDL_AUTO=update
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - delivery-network
+    restart: on-failure
+
+  # Banco de Dados MySQL
+  db:
+    image: mysql:8.0
+    container_name: delivery-db
+    ports:
+      - "3306:3306" # Libera a porta 3306 para voce acessar via Workbench/DBeaver no Windows
+    environment:
+      - MYSQL_DATABASE=delivery
+      - MYSQL_ROOT_PASSWORD=teste
+    # O comando abaixo e necessario para evitar problemas de autenticacao em versoes novas do MySQL
+    command: --default-authentication-plugin=mysql_native_password
+    volumes:
+      - db_data:/var/lib/mysql
+    networks:
+      - delivery-network
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-pteste"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  db_data:
+
+networks:
+  delivery-network:
+    driver: bridge
