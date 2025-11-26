@@ -1,14 +1,15 @@
-# Delivery Tech API
+# DeliveryAPI
 
-Sistema de delivery desenvolvido com Spring Boot e Java 21.
+Sistema de delivery desenvolvido com Spring Boot & Java 21.
 
 ## 🚀 Tecnologias
-- **Java 21 LTS** (versão mais recente)
-- Spring Boot 3.2.x
+- **Java 21 LTS**
+- Spring Boot 3.3.6
 - Spring Web
 - Spring Data JPA
-- H2 Database
+- MariaDB
 - Maven
+- **SpringDoc OpenAPI (Swagger UI)**
 
 ## ⚡ Recursos Modernos Utilizados
 - Records (Java 14+)
@@ -16,40 +17,39 @@ Sistema de delivery desenvolvido com Spring Boot e Java 21.
 - Pattern Matching (Java 17+)
 - Virtual Threads (Java 21)
 
-## 🏃‍♂️ Como executar
-1. **Pré-requisitos:** JDK 21 instalado
+## 🏃‍♂️ Como Executar
+1. **Requisitos:** JDK 21 instalado
 2. Clone o repositório
 3. Execute: `./mvnw spring-boot:run`
-4. Acesse: http://localhost:8080/health
+4. **Acessar Documentação:** http://localhost:8080/swagger-ui.html
 
-## 📋 Endpoints
-- GET /health - Status da aplicação (inclui versão Java)
-- GET /info - Informações da aplicação
-- GET /h2-console - Console do banco H2
+## 📖 Documentação da API (Swagger)
+A API está totalmente documentada utilizando OpenAPI 3.0.
+Acesse a interface interativa em: **[http://localhost:8080/swagger-ui.html](http://localhost:8080/swagger-ui.html)**
+
+### 🔑 Como Autenticar
+Alguns endpoints requerem um Token JWT. Siga os passos abaixo para testar:
+1. Vá até `POST /api/auth/login` no Swagger.
+2. Utilize as credenciais padrão de admin:
+    - **Email:** `admin@delivery.com`
+    - **Senha:** `123456`
+3. Copie o `token` retornado na resposta (sem as aspas).
+4. Clique no botão **Authorize** 🔓 no topo da página.
+5. Cole o token no campo "Value" e clique em **Authorize**.
+
+## 📋 Principais Endpoints
+- **Auth:** Login e Registro de Usuários (`/api/auth`)
+- **Restaurantes:** Gerenciamento de restaurantes (`/api/restaurantes`)
+- **Produtos:** Gerenciamento do cardápio (`/api/produtos`)
+- **Pedidos:** Ciclo de vida completo do pedido (`/api/pedidos`)
+- **Relatórios:** Métricas de vendas e desempenho (`/api/relatorios`)
 
 ## 🔧 Configuração
 - Porta: 8080
-- Banco: H2 em memória
-- Profile: development
-
-## 🎯 URLs de Acesso (Aplicação deve estar Rodando)
-
-* *API Base:* http://localhost:8080/api
-* [cite_start]*Swagger UI (Documentação):* http://localhost:8080/swagger-ui/index.html [cite: 535, 539]
-* [cite_start]*API Docs (JSON):* http://localhost:8080/api-docs [cite: 540]
-
-## :wrench: Testes e Validação
-
-Este projeto está configurado com Testes de Integração (MockMvc) e uma coleção Postman.
-
-### Testes de Integração (Atividade 4.1)
-Para rodar todos os testes automatizados que validam os cenários de CRUD, paginação e erros:
-```bash
-mvntest
+- Banco de Dados: MySQL (Local ou Docker)
+- Perfil: development
 
 ## 👨‍💻 Desenvolvedor
-[Marco Jesus] - [Gestão de TI - 5º Semestre]  
-Desenvolvido com JDK 21 e Spring Boot 3.5.7
+[Marco Jesus]
 
-
-
+###### Desenvolvido com JDK 21 & Spring Boot 3.3.6
